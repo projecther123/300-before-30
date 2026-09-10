@@ -238,11 +238,9 @@ const LOCAL_CARD_IMAGES = Object.freeze({
   3:'https://www.kaprun.at/events/import/image-thumb__1887__contentSquare/b43addfe-b531-470e-8914-40ffefff8624.jpg',
   4:'https://cdn.getyourguide.com/image/format%3Dauto%2Cfit%3Dcrop%2Cgravity%3Dcenter%2Cquality%3D85%2Cwidth%3D1200%2Cheight%3D1200%2Cdpr%3D2/tour_img/adde7912bdf5f696093e6de580571e973583b80bc4d5a7afbdc5b94499b31fe2.jpg',
   5:'https://www.muchbetteradventures.com/magazine/content/images/2021/09/GettyImages-1277142237.jpg',
-  6:'https://www.lootrush.com/images/new-lp/get-paid-image.webp',
   7:'https://images.unsplash.com/photo-1712783374965-838e54788ec8?fm=jpg&ixlib=rb-4.0.3&q=85&w=1800',
   8:'https://azmbcanwixwqvviqqqol.supabase.co/storage/v1/object/public/images/ai-generated/article-1777975853012-1777975853012.png',
-  9:'https://kartin.papik.pro/uploads/posts/2023-06/1687828392_kartin-papik-pro-p-kartinki-palatka-u-morya-70.jpg',
-  10:'https://clairexplore.s3.eu-west-3.amazonaws.com/large_donner2_dc50f6ea3b.jpg'
+  9:'https://kartin.papik.pro/uploads/posts/2023-06/1687828392_kartin-papik-pro-p-kartinki-palatka-u-morya-70.jpg'
 });
 
 function imageQueryForGoal(g){
@@ -424,7 +422,7 @@ function cardImageForGoal(g){
   const p=Number(g.position||0);
   if(LOCAL_CARD_IMAGES[p]) return LOCAL_CARD_IMAGES[p];
   const q=activityImageQuery(g);
-  return `/api/image?q=${encodeURIComponent(q)}&p=${encodeURIComponent(p)}&v=16`;
+  return `/api/image?q=${encodeURIComponent(q)}&p=${encodeURIComponent(p)}&v=17`;
 }
 
 function cardPhotoError(img, gId){
