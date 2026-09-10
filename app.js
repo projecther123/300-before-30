@@ -172,6 +172,15 @@ const FILTER_SHORT = {
   'Life Milestones':'Milestones'
 };
 
+const CATEGORY_IMAGES = {
+  'Once-in-a-Lifetime / Major Experiences':'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=82',
+  'Trips & Travel':'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=82',
+  'Short Trips & Days Out':'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=82',
+  'Activities, Events & Nights Out':'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1000&q=82',
+  'Everyday / Easy Wins':'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=82',
+  'Life Milestones':'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1000&q=82'
+};
+
 function renderHome(){
   const s=stats();
   $('#homePct').textContent=s.pct+'%';
@@ -179,33 +188,68 @@ function renderHome(){
   $('.ring').style.setProperty('--p',s.pct);
   $('#categoryGrid').innerHTML=CATS.map(c=>{
     const gs=state.goals.filter(g=>g.category===c), cs=stats(gs);
-    return `<button class="category-card" data-cat="${escapeHtml(c)}">
+    return `<button class="category-card" data-cat="${escapeHtml(c)}" style="--cat-image:url('${CATEGORY_IMAGES[c]}')">
       <span class="cat-icon">${ICONS[c]}</span>
       <strong>${escapeHtml(CAT_SHORT[c]||c)}</strong>
-      <small>${cs.done} of ${cs.total} &nbsp; ${cs.pct}%</small>
+      <div class="cat-stat"><b>${cs.done} of ${cs.total}</b><span>${cs.pct}%</span></div>
       <span class="cat-progress"><i style="width:${cs.pct}%"></i></span>
     </button>`;
   }).join('');
   $$('.category-card').forEach(b=>b.onclick=()=>{ state.category=b.dataset.cat; switchTab('list'); renderList(); });
 }
 
-const CARD_IMAGES = [
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1486911278844-a81c5267e227?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1441716844725-09cedc13a4e7?auto=format&fit=crop&w=900&q=82",
-  "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=82"
-];
+const IMAGE_OVERRIDES = {
+  1:'helicopter flight',2:'skydiving parachute',3:'zipline adventure',4:'bungee jumping',5:'solo backpacker travel',6:'remote work abroad laptop city',7:'northern lights aurora',8:'drive in cinema cars',9:'beach camping tent',10:'swimming alpine lake',
+  11:'sunrise sunset landscape',12:'natural hot spring',13:'american bar cocktail usa',14:'swimming dolphins ocean',15:'great barrier reef scuba diving',16:'new years fireworks city',17:'surfing ocean wave',18:'adult dance class studio',19:'vineyard wine grapes',20:'cruise ship sea',
+  21:'karaoke bar microphone',22:'paragliding mountains',23:'holiday volunteering charity',24:'water skiing lake',25:'south america travel peru',26:'eurovision concert stage',27:'business class airplane cabin',28:'floating lantern festival',29:'cooking class kitchen',30:'cocktail making class',
+  31:'world map travel dart',32:'conference ted talk stage',33:'television studio audience',34:'live band concert',35:'opera house theatre',36:'koala australia',37:'grape stomping wine festival',38:'white water rafting',39:'international festival crowd',40:'casino roulette',
+  41:'oktoberfest munich',42:'friends road trip car',43:'bible book reading',44:'paintball outdoor',45:'laser tag arena',46:'seven wonders world travel',47:'hot air balloon',48:'meteor shower stars',49:'digital detox nature',50:'ice swimming winter',
+  51:'ancestry dna genealogy',52:'waterfall swimming',53:'colour run race',54:'pottery class ceramics',55:'playing instrument piano',56:'seaplane lake',57:'horse riding mountains',58:'blind date restaurant',59:'solo dining restaurant travel',60:'frog legs food',
+  61:'champagne sabrage bottle',62:'cigar lounge',63:'first aid training',64:'pole dancing class',65:'race car track',66:'champagne breakfast',67:'submarine underwater',68:'limousine city night',69:'japanese tea ceremony',70:'europe christmas market',
+  71:'amazon rainforest river',72:'seven continents world map',73:'small italian village',74:'palace versailles france',75:'jerusalem old city',76:'st patricks day dublin',77:'london double decker bus',78:'designer handbag luxury',79:'10k running race',80:'mother daughter holiday',
+  81:'self defence class',82:'motorbike ride road',83:'homemade bread baking',84:'facial spa skincare',85:'spa weekend hotel',86:'pull up gym',87:'yoga retreat',88:'public speaking stage',89:'romantic comedy movie cinema',90:'blood donation',
+  91:'classic novels books',92:'classic movies cinema',93:'comedy show standup',94:'first date fun',95:'michelin star restaurant',96:'luxury sports car test drive',97:'horse racing grandstand',98:'formal event couple date',99:'mechanical bull rodeo',100:'cliff jumping sea',
+  101:'psychic tarot reading',102:'circus tent performance',103:'venice canals gondola',104:'courtroom trial',105:'long city walk steps',106:'passport travel countries',107:'volcano hiking',108:'ice hockey game',109:'india taj mahal travel',110:'fish pedicure spa',
+  111:'outdoor rock climbing',112:'strictly ballroom dance blackpool',113:'parasailing beach',114:'tropical island nation',115:'adult sports team',116:'giant panda',117:'wedding party bridesmaids',118:'war and peace book',119:'language learning conversation',120:'voting polling station',
+  121:'art gallery event',122:'dinner party table',123:'self improvement book',124:'investing stocks finance',125:'sports betting ticket',126:'scuba certification diving',127:'baby shower party',128:'usa road trip states map',129:'buy first car',130:'flowers gift friend',
+  131:'surprise party balloons',132:'school alumni volunteering',133:'school reunion friends',134:'snowdon mountain wales',135:'edinburgh fringe festival',136:'escalator underground',137:'all inclusive resort pool',138:'guinness dublin pub',139:'dead sea floating',140:'dog sledding snow',
+  141:'orcas norway ocean',142:'route 66 road trip',143:'vegetable garden harvest',144:'magic trick cards',145:'charity donation giving',146:'salary negotiation office',147:'dancing in rain',148:'via ferrata mountain',149:'sandboarding dunes',150:'solo holiday travel',
+  151:'business travel airport laptop',152:'glastonbury festival',153:'stonehenge england',154:'film set extra actor',155:'scottish highlands road trip',156:'seven sisters cliffs england',157:'punting cambridge river',158:'henley royal regatta rowing',159:'notting hill carnival london',160:'shakespeares globe theatre',
+  161:'cheese rolling hill race',162:'twickenham rugby england',163:'uk parliament house commons',164:'perfume fragrance bottles',165:'hypnosis stage',166:'family recipe cooking',167:'handstand yoga',168:'constellations night sky',169:'auction house bidding',170:'galapagos islands wildlife',
+  171:'flowers bouquet self gift',172:'solo dinner restaurant uk',173:'shooting star night sky',174:'fairground prize carnival',175:'birthday cake baking',176:'houseplant indoor plant',177:'asking someone on date',178:'conga line party',179:'peaceful protest march',180:'poetry reading microphone',
+  181:'hotel room upgrade luxury',182:'burlesque cabaret show',183:'art painting gallery home',184:'public lecture auditorium',185:'leaving job office box',186:'guest speaker conference',187:'finger whistle',188:'tailored suit fitting',189:'curling sport ice',190:'fringe haircut salon',
+  191:'thames river boat london',192:'living alone apartment',193:'life drawing class studio',194:'moonwalk dance',195:'murder mystery dinner',196:'womens football match stadium',197:'chinatown london night food',198:'renaissance fair costume',199:'haunted house ghost',200:'professional makeup artist',
+  201:'formal event hair styling',202:'world darts championship ally pally',203:'ronnie scotts jazz club london',204:'campervan travel road',205:'glacier walking crampons',206:'pyramids giza egypt',207:'patagonia hiking mountains',208:'rio carnival brazil',209:'seance candles table',210:'central asia silk road',
+  211:'goodwood festival cars england',212:'trapeze circus class',213:'midnight sun arctic',214:'conker championships england',215:'hundred acre wood forest',216:'snail racing village',217:'yo yo trick',218:'lock picking practice',219:'home brewing beer',220:'luxury dining train',
+  221:'tasting menu fine dining',222:'glacier express switzerland train',223:'regular local cafe coffee',224:'sleeper train cabin',225:'earth oven food cooking',226:'balloon animal',227:'vip concert passes',228:'manta ray diving',229:'night skiing lights',230:'friends ski trip',
+  231:'theme park roller coaster adult',232:'champagne afternoon tea',233:'eating competition food',234:'apiary beekeeper bees',235:'religious service church ceremony',236:'classical music concert orchestra',237:'magic show theatre',238:'sloth wild rainforest',239:'flower arranging bouquet',240:'longleat safari england',
+  241:'dog show competition',242:'collectors convention expo',243:'parkrun runners park',244:'bingo night hall',245:'london tube final stop explore',246:'cracking egg one handed',247:'stone skimming lake',248:'paper aeroplane flying',249:'kite flying field',250:'2p coin pusher seaside arcade',
+  251:'car boot sale england',252:'town council meeting chamber',253:'daisy chain flowers',254:'pub leaderboard darts',255:'homemade lemonade',256:'wild owl forest',257:'souffle baking',258:'boomerang throwing',259:'house of cards playing cards',260:'model rocket launch',
+  261:'rickshaw driving city',262:'monster truck race',263:'village duck race river',264:'competition judge clipboard',265:'formal hat event fascinator',266:'cat cafe',267:'avocado plant seed',268:'istanbul bosphorus europe asia walk',269:'film location travel',270:'great migration serengeti wildebeest',
+  271:'punch and judy seaside',272:'local theatre production stage',273:'arctic circle sign',274:'butterfly migration monarch',275:'yurt camping',276:'krampus parade austria',277:'hotel room service breakfast',278:'hotel minibar',279:'neighbours chatting home',280:'christmas abroad tropical',
+  281:'viewing party friends tv',282:'olympics stadium',283:'friends moving house boxes',284:'crystal glasses table',285:'movie marathon trilogy',286:'matinee theatre',287:'putting up shelf diy',288:'adult climbing tree',289:'prague beer pint',290:'book signing author',
+  291:'braille reading fingers',292:'ice fishing frozen lake',293:'lake bled church bell slovenia',294:'netherlands tulip fields',295:'bran castle romania dracula',296:'scafell pike lake district',297:'ben nevis scotland',298:'kilimanjaro mountain africa',299:'wimbledon centre court tennis',300:'long friendship friends celebration'
+};
+
+function imageQueryForGoal(g){
+  const p=Number(g.position||0);
+  if(IMAGE_OVERRIDES[p]) return IMAGE_OVERRIDES[p];
+  return String(g.title||'bucket list experience')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\b(go|take|see|visit|attend|learn|do|have|get|make|be|become|try|watch|read|buy|ride|drink|eat|stay|spend|own|help|start|throw|build|celebrate)\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
 function imageForGoal(g){
-  const p = Number(g.position || 1);
-  return CARD_IMAGES[(p - 1) % CARD_IMAGES.length];
+  const q=imageQueryForGoal(g).split(' ').slice(0,5).join(',');
+  const p=Number(g.position||1);
+  return `https://loremflickr.com/900/1100/${encodeURIComponent(q).replace(/%2C/g,',')}?lock=${p}`;
+}
+
+function fallbackForCategory(category){
+  return CATEGORY_IMAGES[category] || CATEGORY_IMAGES['Trips & Travel'];
 }
 
 function renderList(){
@@ -216,7 +260,8 @@ function renderList(){
   const goals=state.goals.filter(g=>(state.category==='All'||g.category===state.category)&&(state.status==='all'||(state.status==='done')===goalDone(g))&&g.title.toLowerCase().includes(state.search.toLowerCase()));
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
-  wrap.innerHTML=goals.map((g,i)=>`<article class="goal-card" data-id="${g.id}" style="--goal-image:url('${imageForGoal(g)}')">
+  wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
+    <img class="goal-photo" loading="lazy" decoding="async" src="${imageForGoal(g)}" data-fallback="${fallbackForCategory(g.category)}" alt="" onerror="this.onerror=null;this.src=this.dataset.fallback">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">
