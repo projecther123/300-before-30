@@ -196,6 +196,7 @@ function renderHome(){
     </button>`;
   }).join('');
   $$('.category-card').forEach(b=>b.onclick=()=>{ state.category=b.dataset.cat; switchTab('list'); renderList(); });
+  const explore=$('#exploreAll'); if(explore) explore.onclick=()=>{ state.category='All'; switchTab('list'); renderList(); };
 }
 
 const IMAGE_OVERRIDES = {
@@ -242,14 +243,45 @@ function imageQueryForGoal(g){
     .trim();
 }
 
-function imageForGoal(g){
-  const q=imageQueryForGoal(g).split(' ').slice(0,5).join(',');
-  const p=Number(g.position||1);
-  return `https://loremflickr.com/900/1100/${encodeURIComponent(q).replace(/%2C/g,',')}?lock=${p}`;
-}
-
 function fallbackForCategory(category){
   return CATEGORY_IMAGES[category] || CATEGORY_IMAGES['Trips & Travel'];
+}
+
+// Goal imagery is resolved from the exact experience-specific query.
+// We start with a tasteful category image so there are never broken/ugly placeholders,
+// then lazily replace it with the first relevant portrait result from Unsplash's own search feed.
+const imageCache = JSON.parse(localStorage.getItem('bb30-image-cache-v2') || '{}');
+function persistImageCache(){
+  try { localStorage.setItem('bb30-image-cache-v2', JSON.stringify(imageCache)); } catch(e) {}
+}
+function cachedImageForGoal(g){ return imageCache[String(g.position||'')] || fallbackForCategory(g.category); }
+async function resolveGoalImage(img){
+  if(!img || img.dataset.resolving==='1' || img.dataset.resolved==='1') return;
+  const pos=img.dataset.position, query=img.dataset.query;
+  if(imageCache[pos]){ img.src=imageCache[pos]; img.dataset.resolved='1'; return; }
+  img.dataset.resolving='1';
+  try{
+    const endpoint=`https://unsplash.com/napi/search/photos?query=${encodeURIComponent(query)}&per_page=1&page=1&orientation=portrait`;
+    const r=await fetch(endpoint,{headers:{'accept':'application/json'}});
+    if(!r.ok) throw new Error('image search failed');
+    const j=await r.json();
+    const hit=j?.results?.[0];
+    const url=hit?.urls?.regular || hit?.urls?.small;
+    if(url){
+      const fitted=url + (url.includes('?')?'&':'?') + 'auto=format&fit=crop&w=700&q=82';
+      imageCache[pos]=fitted; persistImageCache(); img.src=fitted; img.dataset.resolved='1';
+    }
+  }catch(e){
+    img.dataset.resolved='1';
+  }finally{ img.dataset.resolving='0'; }
+}
+function wireGoalImages(){
+  const imgs=[...document.querySelectorAll('.goal-photo[data-query]')];
+  if(!('IntersectionObserver' in window)){ imgs.slice(0,12).forEach(resolveGoalImage); return; }
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{ if(entry.isIntersecting){ resolveGoalImage(entry.target); io.unobserve(entry.target); } });
+  },{rootMargin:'500px 0px'});
+  imgs.forEach(img=>io.observe(img));
 }
 
 function renderList(){
@@ -261,7 +293,7 @@ function renderList(){
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
   wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
-    <img class="goal-photo" loading="lazy" decoding="async" src="${imageForGoal(g)}" data-fallback="${fallbackForCategory(g.category)}" alt="" onerror="this.onerror=null;this.src=this.dataset.fallback">
+    <img class="goal-photo" loading="lazy" decoding="async" src="${cachedImageForGoal(g)}" data-position="${g.position||''}" data-query="${escapeHtml(imageQueryForGoal(g))}" data-fallback="${fallbackForCategory(g.category)}" alt="" onerror="this.onerror=null;this.src=this.dataset.fallback">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">
@@ -273,6 +305,7 @@ function renderList(){
   </article>`).join('');
   $$('.goal-card').forEach(c=>c.onclick=e=>{if(e.target.closest('[data-tick]'))return;openGoal(c.dataset.id)});
   $$('[data-tick]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleGoal(b.dataset.tick)});
+  wireGoalImages();
 }
 
 async function toggleGoal(id){
