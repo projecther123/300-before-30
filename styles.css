@@ -211,3 +211,9 @@ nav button span{font-size:18px}nav button.active{color:var(--ink);font-weight:70
   #home .hero-note{max-width:67px !important;font-size:13px !important;padding-left:7px !important}
   #home .hero-art{width:54% !important}
 }
+
+/* V15 spacing + clean category imagery */
+#home .hero{height:264px !important;margin-bottom:0 !important}
+#home .section{margin-top:-10px !important;padding-top:0 !important}
+#home .section-head{margin-top:0 !important}
+#home .cat-icon{display:block !important;z-index:3 !important}

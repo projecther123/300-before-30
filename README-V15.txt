@@ -1,0 +1,1 @@
+V15: category section moved upward; category images rebuilt without baked-in icons; cards 1-10 keep the fixed images; cards 11-300 now use title-specific image requests instead of category backgrounds.

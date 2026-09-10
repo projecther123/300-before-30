@@ -415,11 +415,135 @@ function wireGoalImages(){
 }
 
 
+function imageKeywordsForGoal(g){
+  const t = String(g.title||'').toLowerCase();
+  const rules = [
+    [/sunrise.*sunset/,'sunrise,sunset'],
+    [/hot spring/,'hotspring,nature'],
+    [/drink.*usa/,'cocktail,america'],
+    [/dolphins|sharks/,'dolphin,ocean'],
+    [/great barrier reef|scuba/,'scuba,reef'],
+    [/new year/,'fireworks,city'],
+    [/learn to surf|surf/,'surf,ocean'],
+    [/dance class/,'dance,studio'],
+    [/vineyard/,'vineyard,wine'],
+    [/cruise/,'cruise,ocean'],
+    [/karaoke/,'karaoke,bar'],
+    [/paraglid/,'paragliding,mountain'],
+    [/volunteer/,'volunteer,community'],
+    [/water ski/,'waterski,lake'],
+    [/eurovision/,'concert,stage'],
+    [/business class|first class/,'airplane,cabin'],
+    [/lantern/,'lantern,night'],
+    [/cooking class/,'cooking,kitchen'],
+    [/cocktail/,'cocktail,bar'],
+    [/dart.*map/,'map,travel'],
+    [/ted talk|public lecture|talk-show/,'auditorium,stage'],
+    [/band.*live|concert/,'concert,stage'],
+    [/opera/,'opera,theatre'],
+    [/koala/,'koala,australia'],
+    [/grape stomp/,'vineyard,grapes'],
+    [/rafting/,'rafting,river'],
+    [/festival/,'festival,crowd'],
+    [/casino/,'casino,night'],
+    [/oktoberfest/,'oktoberfest,germany'],
+    [/road trip/,'roadtrip,landscape'],
+    [/bible/,'bible,book'],
+    [/paintball/,'paintball,outdoor'],
+    [/laser tag/,'lasertag,game'],
+    [/seven wonders/,'landmark,travel'],
+    [/hot.air balloon/,'balloon,landscape'],
+    [/meteor/,'stars,night'],
+    [/electronics/,'digitaldetox,nature'],
+    [/ice.water|ice swimming/,'winter,swimming'],
+    [/ancestry/,'dna,ancestry'],
+    [/waterfall/,'waterfall,nature'],
+    [/colour run/,'colorrun,running'],
+    [/pottery/,'pottery,studio'],
+    [/instrument|song/,'instrument,music'],
+    [/seaplane/,'seaplane,ocean'],
+    [/horse riding/,'horse,mountain'],
+    [/blind date|first date/,'date,restaurant'],
+    [/restaurant alone/,'restaurant,dinner'],
+    [/frog legs/,'frenchfood,restaurant'],
+    [/champagne/,'champagne,luxury'],
+    [/cigar/,'cigar,lounge'],
+    [/first.aid/,'firstaid,training'],
+    [/pole.dancing/,'poledance,studio'],
+    [/race car/,'racecar,track'],
+    [/submarine/,'submarine,ocean'],
+    [/limousine/,'limousine,city'],
+    [/tea ceremony/,'tea,japan'],
+    [/christmas market/,'christmasmarket,europe'],
+    [/amazon rainforest/,'rainforest,amazon'],
+    [/seven continents/,'worldmap,travel'],
+    [/guinness|pint/,'pub,beer'],
+    [/dog sled/,'dogsled,snow'],
+    [/orca/,'orca,ocean'],
+    [/route 66/,'route66,road'],
+    [/grow|plant|avocado/,'plant,garden'],
+    [/magic trick|magic show/,'magic,stage'],
+    [/charity|donation|volunteer/,'charity,community'],
+    [/salary|job|speaker|work/,'career,office'],
+    [/dance in the rain/,'rain,dance'],
+    [/via ferrata|rock climbing|cliff jumping|kilimanjaro|snowdon|ben nevis|scafell/,'mountain,hiking'],
+    [/sandboard/,'sandboarding,desert'],
+    [/solo holiday|holiday/,'travel,coast'],
+    [/glastonbury|fringe|carnival|festival/,'festival,crowd'],
+    [/stonehenge/,'stonehenge,england'],
+    [/campervan/,'campervan,roadtrip'],
+    [/glacier/,'glacier,mountain'],
+    [/pyramids/,'pyramids,egypt'],
+    [/rio carnival/,'carnival,rio'],
+    [/seance|psychic/,'mystic,candle'],
+    [/central asia/,'centralasia,landscape'],
+    [/goodwood|horse race/,'horseracing,event'],
+    [/trapeze/,'trapeze,circus'],
+    [/midnight sun/,'midnightsun,arctic'],
+    [/curling|ice hockey|ice fishing|ski/,'winter,sport'],
+    [/sleeper train|glacier express|luxury dining train/,'train,landscape'],
+    [/manta/,'mantaray,ocean'],
+    [/theme park/,'themepark,night'],
+    [/apiary|bee/,'bees,honey'],
+    [/classical music/,'orchestra,concert'],
+    [/sloth/,'sloth,rainforest'],
+    [/flowers|bouquet/,'flowers,florist'],
+    [/longleat/,'safari,estate'],
+    [/dog show/,'dogshow,event'],
+    [/parkrun|10k|running/,'running,park'],
+    [/bingo/,'bingo,hall'],
+    [/tube|bus/,'london,transport'],
+    [/kite/,'kite,beach'],
+    [/car boot/,'market,vintage'],
+    [/owl/,'owl,wildlife'],
+    [/souffle|bread|cake|lemonade/,'baking,kitchen'],
+    [/boomerang/,'boomerang,outback'],
+    [/model rocket/,'rocket,field'],
+    [/rickshaw/,'rickshaw,city'],
+    [/monster truck/,'monstertruck,stadium'],
+    [/duck race|snail racing|conker/,'village,event'],
+    [/formal hat/,'fashion,event'],
+    [/cat.*cafe|puppy.*cafe/,'cat,cafe'],
+    [/great migration/,'safari,wildlife'],
+    [/theatre production/,'theatre,stage'],
+    [/arctic circle/,'arctic,snow'],
+    [/butterfly migration/,'butterfly,nature'],
+    [/yurt/,'yurt,landscape'],
+    [/krampus/,'krampus,parade'],
+    [/room service|minibar/,'hotel,luxury'],
+    [/olympics/,'olympics,stadium'],
+    [/wimbledon/,'tennis,wimbledon'],
+    [/friendship/,'friends,celebration']
+  ];
+  for(const [rx,tags] of rules){ if(rx.test(t)) return tags; }
+  return t.replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>3).slice(0,2).join(',') || 'travel,lifestyle';
+}
+
 function cardImageForGoal(g){
   const p=Number(g.position||0);
   if(LOCAL_CARD_IMAGES[p]) return LOCAL_CARD_IMAGES[p];
-  const q = openverseQueryForGoal(g);
-  return `/api/image?q=${encodeURIComponent(q)}&p=${encodeURIComponent(p)}&v=14`;
+  const tags=imageKeywordsForGoal(g);
+  return `https://loremflickr.com/900/1200/${encodeURIComponent(tags)}?lock=${p+5000}`;
 }
 
 function cardPhotoError(img, gId){
@@ -427,18 +551,13 @@ function cardPhotoError(img, gId){
   if(!g) return;
   const tries = Number(img.dataset.tries||0);
   img.dataset.tries = String(tries+1);
-
   if(tries===0){
-    // Retry with the literal goal title rather than a category photo.
-    img.src = `/api/image?q=${encodeURIComponent(g.title + ' photography scenic')}&p=${encodeURIComponent(Number(g.position||0)+137)}&v=14b`;
+    const tags=imageKeywordsForGoal(g).split(',')[0] || 'travel';
+    img.src=`https://loremflickr.com/900/1200/${encodeURIComponent(tags)}?lock=${Number(g.position||0)+9000}`;
     return;
   }
-
-  // Never silently replace a goal with an unrelated category background.
-  // Leave the photograph layer neutral if both title-specific attempts fail.
-  img.onerror = null;
-  img.removeAttribute('src');
-  img.style.opacity = '0';
+  img.onerror=null;
+  img.style.opacity='0';
 }
 
 function renderList(){
