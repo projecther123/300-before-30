@@ -189,14 +189,23 @@ function renderHome(){
   $$('.category-card').forEach(b=>b.onclick=()=>{ state.category=b.dataset.cat; switchTab('list'); renderList(); });
 }
 
-function visualClass(g,i){
-  if (state.view==='rows') return '';
-  const p=Number(g.position||i+1);
-  if ([1,7,15,25,38,56,57,71,107,139,140,141,142,170,205,207,213,228,238,270,273,274,298].includes(p)) return `photo v${(p%4)+1}`;
-  if (p%7===0) return 'dark';
-  if (p%3===0) return 'editorial';
-  if (i%5===0) return `photo v${(i%4)+1}`;
-  return '';
+const CARD_IMAGES = [
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1486911278844-a81c5267e227?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1441716844725-09cedc13a4e7?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=900&q=82"
+];
+function imageForGoal(g){
+  const p = Number(g.position || 1);
+  return CARD_IMAGES[(p - 1) % CARD_IMAGES.length];
 }
 
 function renderList(){
@@ -207,10 +216,13 @@ function renderList(){
   const goals=state.goals.filter(g=>(state.category==='All'||g.category===state.category)&&(state.status==='all'||(state.status==='done')===goalDone(g))&&g.title.toLowerCase().includes(state.search.toLowerCase()));
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
-  wrap.innerHTML=goals.map((g,i)=>`<article class="goal-card ${visualClass(g,i)}" data-id="${g.id}">
-    <span class="goal-num">${g.position||''}</span>
-    <div class="card-title">${escapeHtml(g.title)}</div>
-    <div class="meta">${ICONS[g.category]||'◇'} ${escapeHtml((CAT_SHORT[g.category]||g.category).toUpperCase())}</div>
+  wrap.innerHTML=goals.map((g,i)=>`<article class="goal-card" data-id="${g.id}" style="--goal-image:url('${imageForGoal(g)}')">
+    <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
+    <div class="goal-shade"></div>
+    <div class="goal-card-copy">
+      <div class="card-title">${escapeHtml(g.title)}</div>
+      <div class="meta">${escapeHtml((CAT_SHORT[g.category]||g.category).toUpperCase())}</div>
+    </div>
     <button class="tick ${goalDone(g)?'done':''}" data-tick="${g.id}" aria-label="Toggle completion">${goalDone(g)?'✓':''}</button>
     <span class="row-more">⋯</span>
   </article>`).join('');
