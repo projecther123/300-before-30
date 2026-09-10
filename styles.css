@@ -217,3 +217,35 @@ nav button span{font-size:18px}nav button.active{color:var(--ink);font-weight:70
 #home .section{margin-top:-10px !important;padding-top:0 !important}
 #home .section-head{margin-top:0 !important}
 #home .cat-icon{display:block !important;z-index:3 !important}
+
+/* =========================
+   V16 — LOCKED HERO, CLEAN PROGRESS CARDS
+   ========================= */
+
+/* Hero itself is intentionally untouched. Only reduce the dead space below it. */
+#home .section{
+  margin-top:-18px !important;
+}
+
+/* Category cards: clean high-resolution photos only.
+   Icons/text are rendered by the app, never baked into the image. */
+#home .category-card{
+  background:#756d62 !important;
+}
+#home .category-card:before{
+  background-size:cover !important;
+  background-position:center center !important;
+  filter:saturate(.88) contrast(.98) brightness(.88) !important;
+  transform:none !important;
+}
+#home .category-card:after{
+  background:linear-gradient(180deg,rgba(8,9,8,.02) 0%,rgba(8,9,8,.09) 45%,rgba(8,9,8,.68) 100%) !important;
+}
+
+/* Cards: don't over-zoom source photography. */
+.goal-photo{
+  transform:none !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  image-rendering:auto !important;
+}
