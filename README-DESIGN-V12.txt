@@ -1,0 +1,1 @@
+V12: locked Home composition with bundled Italy hero asset. My List cards 1-10 are hard-pinned to curated, relevant scenic images. The remaining cards retain the resolver until they are curated in batches.

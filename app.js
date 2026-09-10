@@ -402,6 +402,20 @@ function wireGoalImages(){
 }
 
 
+
+const CURATED_GOAL_IMAGES = Object.freeze({
+  1: 'https://www.sennair.at/images/erlebnis/alpen-rundflug-sennair.jpg',
+  2: 'https://img.shetu66.com/2023/07/27/1690425653507675.png',
+  3: 'https://swiftmedia.s3.amazonaws.com/mountain.swiftcom.com/images/sites/6/2017/06/24123210/CVREpicDiscovery-vdn-062916.jpg',
+  4: 'https://images.squarespace-cdn.com/content/v1/5d84412f7f87bc5278736e53/a92c629a-f233-4222-bbbc-c5bdde291261/Website%2Bimage%2Bsummer%2Balex.jpg',
+  5: 'https://smukti.com/attached_assets/blogs/india_solo_travel_himalayas.png',
+  6: 'https://assets.makes.news/p/69fc8cbeff11fec4bae1dbc2/technology/2026/06/07/openai-s-gpt-5-6-kindle-alpha-hints-at-a-major-leap-in-visual-and-coding-capabilities/image_7297821.jpg',
+  7: 'https://www.10wallpaper.com/wallpaper/1366x768/1709/Aurora_sky_during_winter-2017_Nature_HD_Wallpaper_1366x768.jpg',
+  8: 'https://storage.lacapitalmdp.com/2018/11/AUTOCINE.jpg',
+  9: 'https://digitalcontent.api.tesco.com/v2/media/marketplace/1c70b460-2299-48f7-b6e8-f35761a32e5d/32a157f9a77744c1ad6bce7e73503aff_370962049.jpeg',
+  10:'https://static.wixstatic.com/media/2da879_b3cc400858414c73b64390914d4e378d~mv2.jpg/v1/fill/w_980%2Ch_656%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/2da879_b3cc400858414c73b64390914d4e378d~mv2.jpg'
+});
+
 function directPhotoTags(g){
   // Keep tags literal and short. LoremFlickr treats commas as OR and /all as AND.
   // Using 1–2 concrete nouns avoids the irrelevant fallback images we saw before.
@@ -448,6 +462,8 @@ function directPhotoTags(g){
 }
 
 function directPhotoUrl(g, attempt=0){
+  const pinned = CURATED_GOAL_IMAGES[Number(g.position)];
+  if(pinned) return pinned;
   const tags = directPhotoTags(g);
   const primary = tags[0] || 'travel';
   const secondary = tags[1];
@@ -466,7 +482,6 @@ function cardPhotoError(img, gId){
   const attempt = Number(img.dataset.attempt||0) + 1;
   img.dataset.attempt = String(attempt);
   if(attempt===1){
-    // Retry with a looser single-tag search.
     const tag = directPhotoTags(g)[0] || 'travel';
     img.src = `https://loremflickr.com/640/960/${encodeURIComponent(tag)}?lock=${Number(g.position||1)+431}&random=${Number(g.position||1)+431}`;
   } else if(attempt===2){

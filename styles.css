@@ -594,3 +594,129 @@ nav{position:fixed;z-index:20;left:0;right:0;bottom:0;height:var(--navh);padding
     top:11px !important;
   }
 }
+
+
+/* ============================================================
+   V12 LOCKED HOME
+   Exact approved composition: title upper-left, Italy image right,
+   circle beneath title, quote alongside circle at same depth.
+   ============================================================ */
+#home .hero{
+  position:relative !important;
+  height:290px !important;
+  margin:0 -18px 6px !important;
+  overflow:hidden !important;
+}
+#home .hero-copy{
+  position:absolute !important;
+  z-index:5 !important;
+  left:21px !important;
+  top:25px !important;
+  width:47% !important;
+}
+#home .brand-kicker{display:none !important}
+#home .brand-lockup{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  margin:0 !important;
+  gap:0 !important;
+  white-space:nowrap !important;
+}
+#home .brand-300{
+  display:block !important;
+  font-family:Georgia,'Times New Roman',serif !important;
+  font-size:67px !important;
+  line-height:.76 !important;
+  font-weight:700 !important;
+  letter-spacing:-.055em !important;
+}
+#home .brand-before{
+  display:block !important;
+  margin-top:7px !important;
+  font-family:Georgia,'Times New Roman',serif !important;
+  font-size:29px !important;
+  line-height:.88 !important;
+  font-weight:700 !important;
+  letter-spacing:-.045em !important;
+}
+#home .hero-lower{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-top:18px !important;
+}
+#home .overall{
+  position:static !important;
+  flex:0 0 93px !important;
+  width:93px !important;
+  height:93px !important;
+}
+#home .ring{
+  position:relative !important;
+  inset:auto !important;
+  width:93px !important;
+  height:93px !important;
+  background:#ddd4c7 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+  display:grid !important;
+  place-items:center !important;
+}
+#home .ring:before{
+  content:'' !important;
+  position:absolute !important;
+  inset:8px !important;
+  border-radius:50% !important;
+  background:#f5f0e7 !important;
+}
+#home .ring>div{position:relative !important;z-index:2 !important;text-align:center !important}
+#home .ring strong{display:block !important;font-family:Georgia,serif !important;font-size:29px !important;line-height:.9 !important;font-weight:400 !important}
+#home .ring span{display:block !important;margin-top:4px !important;font-family:Georgia,serif !important;font-size:8.5px !important;line-height:1.03 !important}
+#home .hero-note{
+  position:static !important;
+  transform:none !important;
+  rotate:0deg !important;
+  margin:0 !important;
+  min-height:74px !important;
+  padding-left:10px !important;
+  border-left:1px solid #b8ad9d !important;
+  display:flex !important;
+  align-items:center !important;
+  font-family:'Snell Roundhand','Brush Script MT',cursive !important;
+  font-size:15.5px !important;
+  line-height:1.07 !important;
+  color:#938678 !important;
+  text-align:left !important;
+}
+#home .hero-art{
+  position:absolute !important;
+  z-index:2 !important;
+  right:0 !important;
+  top:12px !important;
+  width:55% !important;
+  height:246px !important;
+  border-radius:58% 0 0 0 / 34% 0 0 0 !important;
+  background-image:url('assets/home-italy-locked.jpg') !important;
+  background-size:cover !important;
+  background-position:center center !important;
+}
+#home .section{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
+#home .section-head{margin-top:0 !important;margin-bottom:10px !important}
+
+@media(max-width:390px){
+  #home .hero{height:278px !important;margin-left:-16px !important;margin-right:-16px !important}
+  #home .hero-copy{left:17px !important;top:22px !important;width:47% !important}
+  #home .brand-300{font-size:61px !important}
+  #home .brand-before{font-size:25px !important;margin-top:6px !important}
+  #home .hero-lower{gap:8px !important;margin-top:16px !important}
+  #home .overall{width:86px !important;height:86px !important;flex-basis:86px !important}
+  #home .ring{width:86px !important;height:86px !important}
+  #home .ring strong{font-size:27px !important}
+  #home .ring span{font-size:8px !important}
+  #home .hero-note{font-size:14px !important;min-height:68px !important;padding-left:8px !important}
+  #home .hero-art{width:55% !important;height:235px !important;top:10px !important}
+}
