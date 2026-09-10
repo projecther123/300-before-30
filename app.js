@@ -155,28 +155,65 @@ function goalDone(g){
 }
 function renderAll(){ renderHome(); renderList(); renderMe(); }
 
+const CAT_SHORT = {
+  'Once-in-a-Lifetime / Major Experiences':'Major Experiences',
+  'Trips & Travel':'Trips & Travel',
+  'Short Trips & Days Out':'Days Out',
+  'Activities, Events & Nights Out':'Activities & Nights Out',
+  'Everyday / Easy Wins':'Everyday Easy Wins',
+  'Life Milestones':'Life Milestones'
+};
+const FILTER_SHORT = {
+  'Once-in-a-Lifetime / Major Experiences':'Major',
+  'Trips & Travel':'Travel',
+  'Short Trips & Days Out':'Days Out',
+  'Activities, Events & Nights Out':'Activities',
+  'Everyday / Easy Wins':'Easy Wins',
+  'Life Milestones':'Milestones'
+};
+
 function renderHome(){
   const s=stats();
   $('#homePct').textContent=s.pct+'%';
-  $('#homeCount').textContent=`${s.done} of ${s.total} completed`;
+  $('#homeCount').innerHTML=`${s.done} of ${s.total}<br>completed`;
   $('.ring').style.setProperty('--p',s.pct);
   $('#categoryGrid').innerHTML=CATS.map(c=>{
     const gs=state.goals.filter(g=>g.category===c), cs=stats(gs);
-    const short = c.replace('Once-in-a-Lifetime / Major Experiences','Major Experiences');
-    return `<button class="category-card" data-cat="${escapeHtml(c)}"><span class="cat-icon">${ICONS[c]}</span><strong>${escapeHtml(short)}</strong><small>${cs.done} of ${cs.total} · ${cs.pct}%</small></button>`;
+    return `<button class="category-card" data-cat="${escapeHtml(c)}">
+      <span class="cat-icon">${ICONS[c]}</span>
+      <strong>${escapeHtml(CAT_SHORT[c]||c)}</strong>
+      <small>${cs.done} of ${cs.total} &nbsp; ${cs.pct}%</small>
+      <span class="cat-progress"><i style="width:${cs.pct}%"></i></span>
+    </button>`;
   }).join('');
   $$('.category-card').forEach(b=>b.onclick=()=>{ state.category=b.dataset.cat; switchTab('list'); renderList(); });
+}
+
+function visualClass(g,i){
+  if (state.view==='rows') return '';
+  const p=Number(g.position||i+1);
+  if ([1,7,15,25,38,56,57,71,107,139,140,141,142,170,205,207,213,228,238,270,273,274,298].includes(p)) return `photo v${(p%4)+1}`;
+  if (p%7===0) return 'dark';
+  if (p%3===0) return 'editorial';
+  if (i%5===0) return `photo v${(i%4)+1}`;
+  return '';
 }
 
 function renderList(){
   const s=stats();
   $('#listStats').textContent=`${s.done} of ${s.total} · ${s.pct}% complete`;
-  $('#categoryFilters').innerHTML=['All',...CATS].map(c=>`<button class="${state.category===c?'active':''}" data-cat="${escapeHtml(c)}">${c==='All'?'All':ICONS[c]+' '+escapeHtml(c.replace('Once-in-a-Lifetime / Major Experiences','Major').replace('Activities, Events & Nights Out','Activities'))}</button>`).join('');
+  $('#categoryFilters').innerHTML=['All',...CATS].map(c=>`<button class="${state.category===c?'active':''}" data-cat="${escapeHtml(c)}">${c==='All'?'All':ICONS[c]+' '+escapeHtml(FILTER_SHORT[c]||c)}</button>`).join('');
   $$('#categoryFilters button').forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderList()});
   const goals=state.goals.filter(g=>(state.category==='All'||g.category===state.category)&&(state.status==='all'||(state.status==='done')===goalDone(g))&&g.title.toLowerCase().includes(state.search.toLowerCase()));
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
-  wrap.innerHTML=goals.map((g,i)=>`<article class="goal-card ${i%4===0?'photo':i%3===0?'graphic':''}" data-id="${g.id}"><span class="goal-num">${g.position||''}</span><div class="card-title">${escapeHtml(g.title)}</div><div class="meta">${ICONS[g.category]||'◇'} ${escapeHtml(g.category.toUpperCase())}</div><button class="tick ${goalDone(g)?'done':''}" data-tick="${g.id}" aria-label="Toggle completion">${goalDone(g)?'✓':''}</button></article>`).join('');
+  wrap.innerHTML=goals.map((g,i)=>`<article class="goal-card ${visualClass(g,i)}" data-id="${g.id}">
+    <span class="goal-num">${g.position||''}</span>
+    <div class="card-title">${escapeHtml(g.title)}</div>
+    <div class="meta">${ICONS[g.category]||'◇'} ${escapeHtml((CAT_SHORT[g.category]||g.category).toUpperCase())}</div>
+    <button class="tick ${goalDone(g)?'done':''}" data-tick="${g.id}" aria-label="Toggle completion">${goalDone(g)?'✓':''}</button>
+    <span class="row-more">⋯</span>
+  </article>`).join('');
   $$('.goal-card').forEach(c=>c.onclick=e=>{if(e.target.closest('[data-tick]'))return;openGoal(c.dataset.id)});
   $$('[data-tick]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleGoal(b.dataset.tick)});
 }
