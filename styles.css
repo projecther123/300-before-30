@@ -143,3 +143,71 @@ nav button span{font-size:18px}nav button.active{color:var(--ink);font-weight:70
   .goal-card{min-height:220px}
   .card-title{font-size:18px}
 }
+
+
+/* =========================
+   V14 LOCKED POLISH
+   ========================= */
+
+/* Keep the approved hero photograph. Give the left composition a hard boundary,
+   so the script quote can never drift across the Italy photo. */
+#home .hero-copy{
+  width:46% !important;
+  overflow:visible !important;
+}
+#home .hero-lower{
+  width:100% !important;
+  display:grid !important;
+  grid-template-columns:90px minmax(0,1fr) !important;
+  column-gap:8px !important;
+  align-items:center !important;
+}
+#home .hero-note{
+  width:auto !important;
+  max-width:72px !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  padding-left:8px !important;
+  white-space:normal !important;
+}
+#home .hero-art{
+  width:54% !important;
+}
+
+/* Keep category-card layout exactly as approved, but use the locked local imagery. */
+#home .category-card:before{
+  filter:saturate(.88) contrast(.98) brightness(.86) !important;
+  background-position:center center !important;
+}
+#home .category-card:after{
+  background:linear-gradient(180deg,rgba(8,9,8,.02) 0%,rgba(8,9,8,.10) 42%,rgba(8,9,8,.68) 100%) !important;
+}
+
+/* Activity imagery: use the whole source photograph rather than excessive zoom.
+   The slight scale is just enough to avoid hairline edges. */
+.goal-photo{
+  object-fit:cover !important;
+  object-position:center center !important;
+  transform:scale(1.002) !important;
+  filter:saturate(.94) contrast(.98) brightness(.92) !important;
+}
+.goal-shade{
+  background:linear-gradient(
+    180deg,
+    rgba(12,12,11,.02) 0%,
+    rgba(12,12,11,.04) 44%,
+    rgba(12,12,11,.66) 100%
+  ) !important;
+}
+
+/* The number is rendered by the UI only once. */
+.goal-num{
+  text-shadow:0 1px 7px rgba(0,0,0,.26) !important;
+}
+
+@media(max-width:390px){
+  #home .hero-copy{width:46% !important}
+  #home .hero-lower{grid-template-columns:84px minmax(0,1fr) !important;column-gap:7px !important}
+  #home .hero-note{max-width:67px !important;font-size:13px !important;padding-left:7px !important}
+  #home .hero-art{width:54% !important}
+}

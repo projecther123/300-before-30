@@ -173,12 +173,12 @@ const FILTER_SHORT = {
 };
 
 const CATEGORY_IMAGES = {
-  'Once-in-a-Lifetime / Major Experiences':'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=82',
-  'Trips & Travel':'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=82',
-  'Short Trips & Days Out':'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=82',
-  'Activities, Events & Nights Out':'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1000&q=82',
-  'Everyday / Easy Wins':'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1000&q=82',
-  'Life Milestones':'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1000&q=82'
+  'Once-in-a-Lifetime / Major Experiences':'home-major.jpg',
+  'Trips & Travel':'home-travel.jpg',
+  'Short Trips & Days Out':'home-days.jpg',
+  'Activities, Events & Nights Out':'home-activities.jpg',
+  'Everyday / Easy Wins':'home-everyday.jpg',
+  'Life Milestones':'home-milestones.jpg'
 };
 
 function renderHome(){
@@ -233,8 +233,16 @@ const IMAGE_OVERRIDES = {
 };
 
 const LOCAL_CARD_IMAGES = Object.freeze({
-  1:'001.jpg',2:'002.jpg',3:'003.jpg',4:'004.jpg',5:'005.jpg',
-  6:'006.jpg',7:'007.jpg',8:'008.jpg',9:'009.jpg',10:'010.jpg'
+  1:'https://contentapi-swissactivities.imgix.net/contentapi.staging.swissactivities/e9f8aeb7cfa7fd6f3706f413e6f0ad47.jpg?auto=format%2Ccompress&crop=edges&fit=crop&w=1600',
+  2:'https://media.lenovonews.fiestic.com/2022/11/08021251/290901465_740330300505324_4377306541959874230_n.jpg',
+  3:'https://www.kaprun.at/events/import/image-thumb__1887__contentSquare/b43addfe-b531-470e-8914-40ffefff8624.jpg',
+  4:'https://cdn.getyourguide.com/image/format%3Dauto%2Cfit%3Dcrop%2Cgravity%3Dcenter%2Cquality%3D85%2Cwidth%3D1200%2Cheight%3D1200%2Cdpr%3D2/tour_img/adde7912bdf5f696093e6de580571e973583b80bc4d5a7afbdc5b94499b31fe2.jpg',
+  5:'https://www.muchbetteradventures.com/magazine/content/images/2021/09/GettyImages-1277142237.jpg',
+  6:'https://www.lootrush.com/images/new-lp/get-paid-image.webp',
+  7:'https://images.unsplash.com/photo-1712783374965-838e54788ec8?fm=jpg&ixlib=rb-4.0.3&q=85&w=1800',
+  8:'https://azmbcanwixwqvviqqqol.supabase.co/storage/v1/object/public/images/ai-generated/article-1777975853012-1777975853012.png',
+  9:'https://kartin.papik.pro/uploads/posts/2023-06/1687828392_kartin-papik-pro-p-kartinki-palatka-u-morya-70.jpg',
+  10:'https://clairexplore.s3.eu-west-3.amazonaws.com/large_donner2_dc50f6ea3b.jpg'
 });
 
 function imageQueryForGoal(g){
@@ -410,16 +418,27 @@ function wireGoalImages(){
 function cardImageForGoal(g){
   const p=Number(g.position||0);
   if(LOCAL_CARD_IMAGES[p]) return LOCAL_CARD_IMAGES[p];
-  // Until the remaining curated assets are added, use the stable category photograph.
-  // This is deliberately deterministic: no random search service, no repeated bears.
-  return fallbackForCategory(g.category);
+  const q = openverseQueryForGoal(g);
+  return `/api/image?q=${encodeURIComponent(q)}&p=${encodeURIComponent(p)}&v=14`;
 }
 
 function cardPhotoError(img, gId){
   const g = state.goals.find(x=>String(x.id)===String(gId));
   if(!g) return;
-  img.onerror=null;
-  img.src=fallbackForCategory(g.category);
+  const tries = Number(img.dataset.tries||0);
+  img.dataset.tries = String(tries+1);
+
+  if(tries===0){
+    // Retry with the literal goal title rather than a category photo.
+    img.src = `/api/image?q=${encodeURIComponent(g.title + ' photography scenic')}&p=${encodeURIComponent(Number(g.position||0)+137)}&v=14b`;
+    return;
+  }
+
+  // Never silently replace a goal with an unrelated category background.
+  // Leave the photograph layer neutral if both title-specific attempts fail.
+  img.onerror = null;
+  img.removeAttribute('src');
+  img.style.opacity = '0';
 }
 
 function renderList(){
@@ -431,7 +450,7 @@ function renderList(){
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
   wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
-    <img class="goal-photo" loading="lazy" decoding="async" src="${cardImageForGoal(g)}" alt="${escapeHtml(g.title)}" onerror="cardPhotoError(this,'${g.id}')">
+    <img class="goal-photo" loading="lazy" decoding="async" data-tries="0" src="${cardImageForGoal(g)}" alt="${escapeHtml(g.title)}" onerror="cardPhotoError(this,'${g.id}')">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">
