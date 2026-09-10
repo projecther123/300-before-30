@@ -1,71 +1,87 @@
-export default async function handler(req, res) {
-  try {
-    const qRaw = String(req.query?.q || 'beautiful travel experience').slice(0, 180);
-    const position = Math.max(0, Number(req.query?.p || 0));
-    const q = `${qRaw} scenic beautiful photography`; 
+const BAD = [
+  'cat','cats','dog','dogs','statue','sculpture','monument','logo','icon','diagram',
+  'infographic','poster','screenshot','drawing','illustration','clipart','sign',
+  'advertisement','advertising','text','meme','cartoon','figurine','toy'
+];
 
-    const params = new URLSearchParams({ q, page_size: '24', mature: 'false' });
-    const search = await fetch(`https://api.openverse.org/v1/images/?${params}`, {
-      headers: { accept: 'application/json', 'user-agent': '300-before-30/1.0' }
+const ALLOW_BAD_IF_QUERY_HAS = new Set([
+  'dog','dogs','cat','cats','statue','sculpture','monument','illustration','drawing','toy'
+]);
+
+function words(s=''){
+  return String(s).toLowerCase().replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(Boolean);
+}
+function overlap(query, hit){
+  const q = new Set(words(query).filter(w=>w.length>2));
+  const hay = words([
+    hit.title, hit.description,
+    ...(Array.isArray(hit.tags)?hit.tags.map(t=>typeof t==='string'?t:(t?.name||'')):[])
+  ].join(' '));
+  let n=0;
+  for(const w of hay) if(q.has(w)) n++;
+  return n;
+}
+function badPenalty(query, hit){
+  const qset=new Set(words(query));
+  const hay=words([
+    hit.title, hit.description,
+    ...(Array.isArray(hit.tags)?hit.tags.map(t=>typeof t==='string'?t:(t?.name||'')):[])
+  ].join(' '));
+  let p=0;
+  for(const bad of BAD){
+    if(hay.includes(bad) && !(qset.has(bad) || ALLOW_BAD_IF_QUERY_HAS.has(bad) && qset.has(bad))) p+=12;
+  }
+  return p;
+}
+function score(query, hit){
+  const width=Number(hit.width||0), height=Number(hit.height||0);
+  const area=Math.min(width*height/1000000,12);
+  const quality=(width>=1000 && height>=700?6:0)+(width>=1600?3:0);
+  const rel=overlap(query,hit)*8;
+  const sourceBonus=(hit.source==='flickr'?2:0);
+  return rel+area+quality+sourceBonus-badPenalty(query,hit);
+}
+
+export default async function handler(req,res){
+  const q=String(req.query.q||'').trim();
+  const p=Math.abs(parseInt(req.query.p||'1',10)||1);
+  if(!q) return res.status(400).send('missing q');
+
+  try{
+    const params=new URLSearchParams({
+      q,
+      page_size:'50',
+      mature:'false'
     });
-    if (!search.ok) throw new Error(`Openverse ${search.status}`);
-    const data = await search.json();
-    const results = Array.isArray(data?.results) ? data.results : [];
 
-    const bad = /infographic|diagram|screenshot|logo|poster|flyer|brochure|chart|graph|text|document|scan|illustration|drawing|vector|clipart|advert|template|menu|book cover/i;
-    const good = /travel|landscape|mountain|coast|ocean|sunset|sunrise|adventure|outdoor|nature|city|architecture|vacation|holiday|scenic|sky|forest|lake|beach|night|light|aerial|photography/i;
-    const queryWords = qRaw.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 8);
+    const r=await fetch(`https://api.openverse.org/v1/images/?${params}`,{
+      headers:{accept:'application/json','user-agent':'300-before-30/1.0'}
+    });
+    if(!r.ok) return res.status(502).send('image search failed');
 
-    const ranked = results.map((hit, idx) => {
-      const url = hit?.thumbnail || hit?.url || '';
-      if (!url || hit?.watermarked || /\.svg(?:\?|$)/i.test(url)) return { hit, score: -9999, idx };
-      let score = 0;
-      const w = Number(hit.width)||0, h = Number(hit.height)||0;
-      if (w >= 1600 || h >= 1600) score += 8; else if (w >= 1000 || h >= 1000) score += 5; else if (w >= 700 || h >= 700) score += 2;
-      if (w && h) {
-        const r = w/h;
-        if (r >= .55 && r <= 1.25) score += 6;
-        else if (r >= .42 && r <= 1.5) score += 3;
-      }
-      const tags = (hit.tags||[]).map(t => t?.name || t).join(' ');
-      const hay = `${hit.title||''} ${tags}`.toLowerCase();
-      if (bad.test(hay)) score -= 30;
-      if (good.test(hay)) score += 4;
-      score += queryWords.filter(wd => hay.includes(wd)).length * 7;
-      if (hit.source === 'stocksnap') score += 14;
-      if (hit.source === 'flickr') score += 2;
-      if (hit.source === 'wikimedia') score -= 4;
-      return { hit, score, idx };
-    }).filter(x => x.score > -1000).sort((a,b) => b.score-a.score || a.idx-b.idx);
+    const data=await r.json();
+    const results=(Array.isArray(data.results)?data.results:[])
+      .filter(h=>{
+        const u=h.thumbnail||h.url;
+        if(!u || h.watermarked) return false;
+        const w=Number(h.width||0), hh=Number(h.height||0);
+        return !w || !hh || (w>=800 && hh>=600);
+      })
+      .map(h=>({h,s:score(q,h)}))
+      .sort((a,b)=>b.s-a.s);
 
-    if (!ranked.length) return res.status(404).send('No image');
+    if(!results.length) return res.status(404).send('no image');
 
-    // Pick from the best few, deterministically, so visually similar goals don't all repeat.
-    const top = ranked.slice(0, Math.min(5, ranked.length));
-    const chosen = top[position % top.length]?.hit || ranked[0].hit;
-    const candidates = [chosen.thumbnail, chosen.url].filter(Boolean);
+    // Deterministic variety among only the top relevant candidates.
+    const top=results.slice(0,Math.min(6,results.length));
+    const chosen=top[p % top.length].h;
+    const url=String(chosen.url||chosen.thumbnail||'').replace(/^http:/,'https:');
+    if(!url) return res.status(404).send('no image');
 
-    let imageResponse = null;
-    for (const candidate of candidates) {
-      try {
-        const r = await fetch(String(candidate).replace(/^http:/,'https:'), {
-          headers: { 'user-agent':'Mozilla/5.0 300-before-30-image-proxy' },
-          redirect:'follow'
-        });
-        if (r.ok && String(r.headers.get('content-type')||'').startsWith('image/')) {
-          imageResponse = r;
-          break;
-        }
-      } catch (_) {}
-    }
-    if (!imageResponse) return res.status(404).send('Image unavailable');
-
-    const bytes = Buffer.from(await imageResponse.arrayBuffer());
-    res.setHeader('Content-Type', imageResponse.headers.get('content-type') || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000');
-    return res.status(200).send(bytes);
-  } catch (err) {
+    res.setHeader('Cache-Control','public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000');
+    return res.redirect(302,url);
+  }catch(err){
     console.error(err);
-    return res.status(500).send('Image lookup failed');
+    return res.status(500).send('image error');
   }
 }
