@@ -1,0 +1,1 @@
+V8 fixes the Home hero spacing/line-height and switches the activity-image resolver to an editorial-first strategy: StockSnap first, stronger scenic queries, high-resolution/aspect scoring, and rejection of infographics/screenshots/text-heavy results. Cache key changed so old ugly images are discarded.

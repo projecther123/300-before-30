@@ -77,3 +77,38 @@ nav{position:fixed;z-index:20;left:0;right:0;bottom:0;height:var(--navh);padding
 .onboarding{position:fixed;inset:0;z-index:50;background:var(--paper);display:grid;place-items:center}.onboard-card{width:min(520px,100%);padding:40px 24px;text-align:center}.onboard-card .brand-lockup{font-size:42px;line-height:.8}.onboard-card .brand-lockup span{font-size:78px}.onboard-card p{max-width:350px;margin:28px auto;color:var(--muted);font-family:Georgia,serif;font-size:18px;line-height:1.25}.onboard-card form{max-width:360px;margin:auto;text-align:left}.username-row{display:flex;align-items:center;margin:7px 0;border:1px solid var(--line);border-radius:10px;background:white}.username-row span{padding-left:12px}.username-row input{flex:1;border:0;outline:0;padding:13px 8px 13px 5px;background:transparent}.help{font-size:12px;min-height:19px}.wide{width:100%;margin-top:12px}.privacy-note{text-align:center;margin-top:17px;line-height:1.4}
 .loading{position:fixed;inset:0;z-index:100;background:rgba(243,238,229,.84);backdrop-filter:blur(4px);display:grid;place-items:center}.loading-card{display:flex;align-items:center;gap:12px;background:#fffdf8;border:1px solid rgba(20,25,20,.1);border-radius:16px;padding:20px 24px;box-shadow:0 18px 60px rgba(20,25,20,.1);font-weight:600}.spinner{width:19px;height:19px;border:2px solid rgba(20,25,20,.16);border-top-color:var(--forest);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.toast{position:fixed;z-index:120;left:18px;right:18px;bottom:92px;background:#202820;color:#fff;padding:12px 15px;border-radius:10px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.16)}
 @media(max-width:390px){.screen{padding-left:15px;padding-right:15px}.hero{margin-left:-15px;margin-right:-15px}.hero-copy{left:15px}.brand-lockup{font-size:35px}.brand-lockup span{font-size:80px}.hero-note{left:46%;font-size:20px}.goal-card{min-height:218px}.card-title{font-size:18px}.category-card strong{font-size:18px}}
+
+/* V8 — lock the approved Home composition and fix hero typography */
+#home .hero{height:392px;margin-bottom:0}
+#home .hero-copy{left:22px;top:46px;width:52%}
+#home .brand-kicker{max-width:190px;font-size:10px;line-height:1.45}
+#home .brand-lockup{margin:18px 0 0;font-size:42px;line-height:.92;letter-spacing:-.055em;white-space:normal;width:290px}
+#home .brand-lockup br{display:none}
+#home .brand-lockup span{display:block;font-size:86px;line-height:.83;letter-spacing:-.06em;margin:0 0 5px}
+#home .hero-note{margin-top:13px;font-size:21px;line-height:1.08;transform:none;max-width:180px}
+#home .hero-art{top:18px;right:-1px;width:57%;height:310px;border-radius:62% 0 0 0 / 35% 0 0 0;background-position:center 50%}
+#home .ring{width:140px;height:140px;top:-118px;right:4%}
+#home .ring:before{inset:11px}
+#home .ring strong{font-size:42px}
+#home .ring span{font-size:12px;margin-top:5px}
+#home .section{padding-top:8px}
+#home .section-head{margin-bottom:10px}
+#home .category-card{height:140px}
+#home .home-quote{min-height:98px;margin-top:12px}
+
+/* Make list photography slightly softer/editorial while keeping text crisp */
+.goal-photo{filter:saturate(.82) contrast(.94) brightness(.90);transform:scale(1.025)}
+.goal-shade{background:linear-gradient(180deg,rgba(12,12,10,.04) 0%,rgba(12,12,10,.08) 42%,rgba(12,12,10,.68) 100%)}
+
+@media(max-width:390px){
+  #home .hero{height:374px}
+  #home .hero-copy{left:18px;top:40px;width:54%}
+  #home .brand-lockup{font-size:38px;width:270px;margin-top:16px}
+  #home .brand-lockup span{font-size:78px;margin-bottom:4px}
+  #home .hero-note{font-size:19px;margin-top:11px}
+  #home .hero-art{width:58%;height:294px;top:16px}
+  #home .ring{width:132px;height:132px;top:-111px;right:3%}
+  #home .ring strong{font-size:39px}
+  #home .section{padding-top:7px}
+  #home .category-card{height:135px}
+}

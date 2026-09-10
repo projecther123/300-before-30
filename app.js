@@ -200,7 +200,7 @@ function renderHome(){
 }
 
 const IMAGE_OVERRIDES = {
-  1:'helicopter flight',2:'skydiving parachute',3:'zipline adventure',4:'bungee jumping',5:'solo backpacker travel',6:'remote work abroad laptop city',7:'northern lights aurora',8:'drive in cinema cars',9:'beach camping tent',10:'swimming alpine lake',
+  1:'helicopter flight',2:'skydiving parachute',3:'zipline adventure',4:'bungee jumping',5:'solo backpacker mountain trail golden hour',6:'remote work abroad laptop city',7:'northern lights aurora snowy lake cabin',8:'drive in cinema cars',9:'beautiful beach camping tent sunset ocean',10:'swimming alpine lake',
   11:'sunrise sunset landscape',12:'natural hot spring',13:'american bar cocktail usa',14:'swimming dolphins ocean',15:'great barrier reef scuba diving',16:'new years fireworks city',17:'surfing ocean wave',18:'adult dance class studio',19:'vineyard wine grapes',20:'cruise ship sea',
   21:'karaoke bar microphone',22:'paragliding mountains',23:'holiday volunteering charity',24:'water skiing lake',25:'south america travel peru',26:'eurovision concert stage',27:'business class airplane cabin',28:'floating lantern festival',29:'cooking class kitchen',30:'cocktail making class',
   31:'world map travel dart',32:'conference ted talk stage',33:'television studio audience',34:'live band concert',35:'opera house theatre',36:'koala australia',37:'grape stomping wine festival',38:'white water rafting',39:'international festival crowd',40:'casino roulette',
@@ -250,7 +250,7 @@ function fallbackForCategory(category){
 // Goal imagery: every experience resolves from its OWN curated search phrase.
 // Openverse is keyless, so we can search photograph results directly in the browser.
 // Results are cached per experience and duplicates are deliberately avoided.
-const IMAGE_CACHE_KEY = 'bb30-image-cache-v4-openverse';
+const IMAGE_CACHE_KEY = 'bb30-image-cache-v5-editorial';
 let imageCache = {};
 try { imageCache = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}') || {}; } catch(e) { imageCache = {}; }
 const claimedImages = new Set(Object.values(imageCache).filter(Boolean));
@@ -268,14 +268,13 @@ function cachedImageForGoal(g){
 
 function openverseQueryForGoal(g){
   const curated = imageQueryForGoal(g);
-  // A few aesthetic context words improve travel/activity results without replacing the subject.
   const categoryHints = {
-    'Once-in-a-Lifetime / Major Experiences':'adventure scenic',
-    'Trips & Travel':'travel scenic',
-    'Short Trips & Days Out':'beautiful destination',
-    'Activities, Events & Nights Out':'experience lifestyle',
-    'Everyday / Easy Wins':'lifestyle aesthetic',
-    'Life Milestones':'lifestyle candid'
+    'Once-in-a-Lifetime / Major Experiences':'scenic adventure golden hour',
+    'Trips & Travel':'beautiful travel destination editorial',
+    'Short Trips & Days Out':'charming destination scenic editorial',
+    'Activities, Events & Nights Out':'stylish lifestyle experience editorial',
+    'Everyday / Easy Wins':'beautiful lifestyle natural light',
+    'Life Milestones':'aspirational lifestyle natural light'
   };
   return `${curated} ${categoryHints[g.category]||''}`.trim();
 }
@@ -286,48 +285,58 @@ function imageCandidateScore(hit, query){
   if(!url || /\.svg(?:\?|$)/i.test(url)) return -999;
   let score = 0;
   const w = Number(hit.width)||0, h = Number(hit.height)||0;
-  if(w >= 900 || h >= 900) score += 3;
+  if(w >= 1800 || h >= 1800) score += 7;
+  else if(w >= 1200 || h >= 1200) score += 5;
+  else if(w >= 800 || h >= 800) score += 2;
   if(w && h){
     const ratio = w/h;
-    if(ratio >= .55 && ratio <= 1.15) score += 4; // portrait/square crops best to our cards
-    else if(ratio <= 1.7) score += 1;
+    if(ratio >= .62 && ratio <= 1.08) score += 6;
+    else if(ratio >= .48 && ratio <= 1.35) score += 3;
   }
-  const hay = `${hit.title||''} ${(hit.tags||[]).map(t=>t?.name||t).join(' ')}`.toLowerCase();
-  const words = String(query).toLowerCase().split(/\s+/).filter(w=>w.length>3);
-  score += words.slice(0,4).filter(w=>hay.includes(w)).length * 2;
-  if(['stocksnap','flickr','wikimedia'].includes(hit.source)) score += 1;
+  const tags=(hit.tags||[]).map(t=>t?.name||t).join(' ');
+  const hay = `${hit.title||''} ${tags}`.toLowerCase();
+  const bad=/infographic|diagram|screenshot|logo|poster|flyer|brochure|map|chart|graph|text|signage|document|scan|illustration|drawing|vector|clipart|advert|template|menu|book cover/;
+  if(bad.test(hay)) score -= 18;
+  const good=/travel|landscape|mountain|coast|ocean|sunset|sunrise|adventure|outdoor|nature|city|architecture|vacation|holiday|scenic|sky|forest|lake|beach|night|light/;
+  if(good.test(hay)) score += 3;
+  const words = String(query).toLowerCase().split(/\s+/).filter(w=>w.length>3 && !['beautiful','scenic','editorial','lifestyle','natural','light','golden','hour','travel','adventure','stylish','aspirational','destination','experience'].includes(w));
+  const matches=words.slice(0,6).filter(w=>hay.includes(w)).length;
+  score += matches * 5;
+  if(matches===0) score -= 10;
+  if(hit.source==='stocksnap') score += 9;
+  if(hit.source==='flickr') score += 2;
+  if(hit.source==='wikimedia') score -= 2;
   return score;
 }
 
 async function fetchOpenverseImage(g){
-  const query = openverseQueryForGoal(g);
-  const params = new URLSearchParams({
-    q: query,
-    page_size: '20',
-    category: 'photograph',
-    mature: 'false'
-  });
-  let r = await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`, {headers:{accept:'application/json'}});
-  if(!r.ok) throw new Error(`Openverse ${r.status}`);
-  let j = await r.json();
-  let results = Array.isArray(j?.results) ? j.results : [];
+  const styledQuery = openverseQueryForGoal(g);
+  const literalQuery = imageQueryForGoal(g);
 
-  // If the aesthetic modifiers made a niche search too restrictive, retry the literal subject only.
-  if(!results.length){
-    const retry = new URLSearchParams({q:imageQueryForGoal(g),page_size:'20',category:'photograph',mature:'false'});
-    r = await fetch(`https://api.openverse.org/v1/images/?${retry.toString()}`, {headers:{accept:'application/json'}});
-    if(r.ok){ j = await r.json(); results = Array.isArray(j?.results) ? j.results : []; }
+  async function search(q, source=''){
+    const params = new URLSearchParams({q,page_size:'30',category:'photograph',mature:'false'});
+    if(source) params.set('source',source);
+    const r=await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`,{headers:{accept:'application/json'}});
+    if(!r.ok) return [];
+    const j=await r.json();
+    return Array.isArray(j?.results)?j.results:[];
   }
 
-  const ranked = results
-    .map((hit,index)=>({hit,index,score:imageCandidateScore(hit,query)}))
-    .filter(x=>x.score>-900)
-    .sort((a,b)=>b.score-a.score || a.index-b.index);
+  let results=[];
+  // StockSnap is our first pass because it skews toward polished stock/editorial photography.
+  results.push(...await search(literalQuery,'stocksnap'));
+  if(results.length<8) results.push(...await search(styledQuery));
+  if(results.length<8) results.push(...await search(literalQuery));
 
-  // Never intentionally reuse an image already assigned to another experience.
-  let chosen = ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url)) || ranked[0];
-  if(!chosen) return null;
-  return chosen.hit.thumbnail || chosen.hit.url;
+  const seen=new Set();
+  const ranked=results
+    .filter(hit=>{const u=hit.thumbnail||hit.url;if(!u||seen.has(u))return false;seen.add(u);return true;})
+    .map((hit,index)=>({hit,index,score:imageCandidateScore(hit,literalQuery)}))
+    .filter(x=>x.score>-5)
+    .sort((a,b)=>b.score-a.score||a.index-b.index);
+
+  const chosen=ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url))||ranked[0];
+  return chosen ? (chosen.hit.thumbnail||chosen.hit.url) : null;
 }
 
 function applyResolvedImage(img, url){
