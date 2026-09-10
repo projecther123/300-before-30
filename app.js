@@ -250,7 +250,7 @@ function fallbackForCategory(category){
 // Goal imagery: every experience resolves from its OWN curated search phrase.
 // Openverse is keyless, so we can search photograph results directly in the browser.
 // Results are cached per experience and duplicates are deliberately avoided.
-const IMAGE_CACHE_KEY = 'bb30-image-cache-v9-reliable';
+const IMAGE_CACHE_KEY = 'bb30-image-cache-v10-server';
 let imageCache = {};
 try { imageCache = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}') || {}; } catch(e) { imageCache = {}; }
 const claimedImages = new Set(Object.values(imageCache).filter(Boolean));
@@ -310,53 +310,12 @@ function imageCandidateScore(hit, query){
 }
 
 async function fetchOpenverseImage(g){
-  const literalQuery = imageQueryForGoal(g);
-  const styledQuery = `${literalQuery} scenic beautiful travel lifestyle`;
-
-  async function search(q){
-    const params = new URLSearchParams({
-      q,
-      page_size:'20',
-      mature:'false'
-    });
-    const r = await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`, {
-      headers:{accept:'application/json'}
-    });
-    if(!r.ok) return [];
-    const j = await r.json();
-    return Array.isArray(j?.results) ? j.results : [];
-  }
-
-  let results = [];
-  try { results.push(...await search(literalQuery)); } catch(e) {}
-  if(results.length < 6){
-    try { results.push(...await search(styledQuery)); } catch(e) {}
-  }
-
-  const seen = new Set();
-  const ranked = results
-    .filter(hit=>{
-      const u = hit?.thumbnail || hit?.url;
-      if(!u || seen.has(u) || hit?.watermarked) return false;
-      seen.add(u);
-      return true;
-    })
-    .map((hit,index)=>({
-      hit,index,
-      score:imageCandidateScore(hit,literalQuery)
-    }))
-    .sort((a,b)=>b.score-a.score || a.index-b.index);
-
-  // Important: never throw away every result just because metadata is sparse.
-  const chosen =
-    ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url)) ||
-    ranked[0];
-
-  if(!chosen) return null;
-
+  const q = openverseQueryForGoal(g);
+  const p = Number(g.position || 0);
+  // Same-origin Vercel function: avoids mobile-browser CORS failures from Openverse.
   return {
-    primary: String(chosen.hit.thumbnail || '').replace(/^http:/,'https:'),
-    fallback: String(chosen.hit.url || '').replace(/^http:/,'https:')
+    primary:`/api/image?q=${encodeURIComponent(q)}&p=${encodeURIComponent(p)}`,
+    fallback:''
   };
 }
 
