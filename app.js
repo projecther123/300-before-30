@@ -250,7 +250,7 @@ function fallbackForCategory(category){
 // Goal imagery: every experience resolves from its OWN curated search phrase.
 // Openverse is keyless, so we can search photograph results directly in the browser.
 // Results are cached per experience and duplicates are deliberately avoided.
-const IMAGE_CACHE_KEY = 'bb30-image-cache-v5-editorial';
+const IMAGE_CACHE_KEY = 'bb30-image-cache-v9-reliable';
 let imageCache = {};
 try { imageCache = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}') || {}; } catch(e) { imageCache = {}; }
 const claimedImages = new Set(Object.values(imageCache).filter(Boolean));
@@ -310,55 +310,97 @@ function imageCandidateScore(hit, query){
 }
 
 async function fetchOpenverseImage(g){
-  const styledQuery = openverseQueryForGoal(g);
   const literalQuery = imageQueryForGoal(g);
+  const styledQuery = `${literalQuery} scenic beautiful travel lifestyle`;
 
-  async function search(q, source=''){
-    const params = new URLSearchParams({q,page_size:'30',category:'photograph',mature:'false'});
-    if(source) params.set('source',source);
-    const r=await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`,{headers:{accept:'application/json'}});
+  async function search(q){
+    const params = new URLSearchParams({
+      q,
+      page_size:'20',
+      mature:'false'
+    });
+    const r = await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`, {
+      headers:{accept:'application/json'}
+    });
     if(!r.ok) return [];
-    const j=await r.json();
-    return Array.isArray(j?.results)?j.results:[];
+    const j = await r.json();
+    return Array.isArray(j?.results) ? j.results : [];
   }
 
-  let results=[];
-  // StockSnap is our first pass because it skews toward polished stock/editorial photography.
-  results.push(...await search(literalQuery,'stocksnap'));
-  if(results.length<8) results.push(...await search(styledQuery));
-  if(results.length<8) results.push(...await search(literalQuery));
+  let results = [];
+  try { results.push(...await search(literalQuery)); } catch(e) {}
+  if(results.length < 6){
+    try { results.push(...await search(styledQuery)); } catch(e) {}
+  }
 
-  const seen=new Set();
-  const ranked=results
-    .filter(hit=>{const u=hit.thumbnail||hit.url;if(!u||seen.has(u))return false;seen.add(u);return true;})
-    .map((hit,index)=>({hit,index,score:imageCandidateScore(hit,literalQuery)}))
-    .filter(x=>x.score>-5)
-    .sort((a,b)=>b.score-a.score||a.index-b.index);
+  const seen = new Set();
+  const ranked = results
+    .filter(hit=>{
+      const u = hit?.thumbnail || hit?.url;
+      if(!u || seen.has(u) || hit?.watermarked) return false;
+      seen.add(u);
+      return true;
+    })
+    .map((hit,index)=>({
+      hit,index,
+      score:imageCandidateScore(hit,literalQuery)
+    }))
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
 
-  const chosen=ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url))||ranked[0];
-  return chosen ? (chosen.hit.thumbnail||chosen.hit.url) : null;
+  // Important: never throw away every result just because metadata is sparse.
+  const chosen =
+    ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url)) ||
+    ranked[0];
+
+  if(!chosen) return null;
+
+  return {
+    primary: String(chosen.hit.thumbnail || '').replace(/^http:/,'https:'),
+    fallback: String(chosen.hit.url || '').replace(/^http:/,'https:')
+  };
 }
 
-function applyResolvedImage(img, url){
+function applyResolvedImage(img, source){
   if(!img) return;
-  if(url){
-    img.src = url;
+  const primary = typeof source==='string' ? source : (source?.primary || source?.fallback || '');
+  const fallback = typeof source==='string' ? '' : (source?.fallback || '');
+
+  if(!primary){
+    img.dataset.resolved='1';
+    return;
+  }
+
+  img.onload = ()=>{
     img.classList.add('is-loaded');
     img.closest('.goal-card')?.classList.add('has-photo');
-  }
-  img.dataset.resolved='1';
+    img.dataset.resolved='1';
+  };
+
+  img.onerror = ()=>{
+    if(fallback && img.dataset.fallbackTried!=='1'){
+      img.dataset.fallbackTried='1';
+      img.src=fallback;
+      return;
+    }
+    img.removeAttribute('src');
+    img.classList.remove('is-loaded');
+    img.dataset.resolved='1';
+  };
+
+  img.src = primary;
 }
 
 async function runImageJob(job){
   const {img,g,key} = job;
   try{
     if(imageCache[key]) return applyResolvedImage(img,imageCache[key]);
-    const url = await fetchOpenverseImage(g);
-    if(url){
-      imageCache[key]=url;
-      claimedImages.add(url);
+    const source = await fetchOpenverseImage(g);
+    if(source?.primary || source?.fallback){
+      const cacheValue = source.primary || source.fallback;
+      imageCache[key]=cacheValue;
+      claimedImages.add(cacheValue);
       persistImageCache();
-      applyResolvedImage(img,url);
+      applyResolvedImage(img,source);
     } else {
       img.dataset.resolved='1';
     }
