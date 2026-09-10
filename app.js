@@ -247,40 +247,147 @@ function fallbackForCategory(category){
   return CATEGORY_IMAGES[category] || CATEGORY_IMAGES['Trips & Travel'];
 }
 
-// Goal imagery is resolved from the exact experience-specific query.
-// We start with a tasteful category image so there are never broken/ugly placeholders,
-// then lazily replace it with the first relevant portrait result from Unsplash's own search feed.
-const imageCache = JSON.parse(localStorage.getItem('bb30-image-cache-v2') || '{}');
+// Goal imagery: every experience resolves from its OWN curated search phrase.
+// Openverse is keyless, so we can search photograph results directly in the browser.
+// Results are cached per experience and duplicates are deliberately avoided.
+const IMAGE_CACHE_KEY = 'bb30-image-cache-v4-openverse';
+let imageCache = {};
+try { imageCache = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}') || {}; } catch(e) { imageCache = {}; }
+const claimedImages = new Set(Object.values(imageCache).filter(Boolean));
+const imageQueue = [];
+let activeImageRequests = 0;
+const MAX_IMAGE_REQUESTS = 3;
+
 function persistImageCache(){
-  try { localStorage.setItem('bb30-image-cache-v2', JSON.stringify(imageCache)); } catch(e) {}
+  try { localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(imageCache)); } catch(e) {}
 }
-function cachedImageForGoal(g){ return imageCache[String(g.position||'')] || fallbackForCategory(g.category); }
-async function resolveGoalImage(img){
-  if(!img || img.dataset.resolving==='1' || img.dataset.resolved==='1') return;
-  const pos=img.dataset.position, query=img.dataset.query;
-  if(imageCache[pos]){ img.src=imageCache[pos]; img.dataset.resolved='1'; return; }
-  img.dataset.resolving='1';
+
+function cachedImageForGoal(g){
+  return imageCache[String(g.position||g.id||'')] || '';
+}
+
+function openverseQueryForGoal(g){
+  const curated = imageQueryForGoal(g);
+  // A few aesthetic context words improve travel/activity results without replacing the subject.
+  const categoryHints = {
+    'Once-in-a-Lifetime / Major Experiences':'adventure scenic',
+    'Trips & Travel':'travel scenic',
+    'Short Trips & Days Out':'beautiful destination',
+    'Activities, Events & Nights Out':'experience lifestyle',
+    'Everyday / Easy Wins':'lifestyle aesthetic',
+    'Life Milestones':'lifestyle candid'
+  };
+  return `${curated} ${categoryHints[g.category]||''}`.trim();
+}
+
+function imageCandidateScore(hit, query){
+  if(!hit || hit.watermarked) return -999;
+  const url = hit.thumbnail || hit.url;
+  if(!url || /\.svg(?:\?|$)/i.test(url)) return -999;
+  let score = 0;
+  const w = Number(hit.width)||0, h = Number(hit.height)||0;
+  if(w >= 900 || h >= 900) score += 3;
+  if(w && h){
+    const ratio = w/h;
+    if(ratio >= .55 && ratio <= 1.15) score += 4; // portrait/square crops best to our cards
+    else if(ratio <= 1.7) score += 1;
+  }
+  const hay = `${hit.title||''} ${(hit.tags||[]).map(t=>t?.name||t).join(' ')}`.toLowerCase();
+  const words = String(query).toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  score += words.slice(0,4).filter(w=>hay.includes(w)).length * 2;
+  if(['stocksnap','flickr','wikimedia'].includes(hit.source)) score += 1;
+  return score;
+}
+
+async function fetchOpenverseImage(g){
+  const query = openverseQueryForGoal(g);
+  const params = new URLSearchParams({
+    q: query,
+    page_size: '20',
+    category: 'photograph',
+    mature: 'false'
+  });
+  let r = await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`, {headers:{accept:'application/json'}});
+  if(!r.ok) throw new Error(`Openverse ${r.status}`);
+  let j = await r.json();
+  let results = Array.isArray(j?.results) ? j.results : [];
+
+  // If the aesthetic modifiers made a niche search too restrictive, retry the literal subject only.
+  if(!results.length){
+    const retry = new URLSearchParams({q:imageQueryForGoal(g),page_size:'20',category:'photograph',mature:'false'});
+    r = await fetch(`https://api.openverse.org/v1/images/?${retry.toString()}`, {headers:{accept:'application/json'}});
+    if(r.ok){ j = await r.json(); results = Array.isArray(j?.results) ? j.results : []; }
+  }
+
+  const ranked = results
+    .map((hit,index)=>({hit,index,score:imageCandidateScore(hit,query)}))
+    .filter(x=>x.score>-900)
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
+
+  // Never intentionally reuse an image already assigned to another experience.
+  let chosen = ranked.find(x=>!claimedImages.has(x.hit.thumbnail||x.hit.url)) || ranked[0];
+  if(!chosen) return null;
+  return chosen.hit.thumbnail || chosen.hit.url;
+}
+
+function applyResolvedImage(img, url){
+  if(!img) return;
+  if(url){
+    img.src = url;
+    img.classList.add('is-loaded');
+    img.closest('.goal-card')?.classList.add('has-photo');
+  }
+  img.dataset.resolved='1';
+}
+
+async function runImageJob(job){
+  const {img,g,key} = job;
   try{
-    const endpoint=`https://unsplash.com/napi/search/photos?query=${encodeURIComponent(query)}&per_page=1&page=1&orientation=portrait`;
-    const r=await fetch(endpoint,{headers:{'accept':'application/json'}});
-    if(!r.ok) throw new Error('image search failed');
-    const j=await r.json();
-    const hit=j?.results?.[0];
-    const url=hit?.urls?.regular || hit?.urls?.small;
+    if(imageCache[key]) return applyResolvedImage(img,imageCache[key]);
+    const url = await fetchOpenverseImage(g);
     if(url){
-      const fitted=url + (url.includes('?')?'&':'?') + 'auto=format&fit=crop&w=700&q=82';
-      imageCache[pos]=fitted; persistImageCache(); img.src=fitted; img.dataset.resolved='1';
+      imageCache[key]=url;
+      claimedImages.add(url);
+      persistImageCache();
+      applyResolvedImage(img,url);
+    } else {
+      img.dataset.resolved='1';
     }
   }catch(e){
+    console.warn('Image lookup failed for', g.title, e);
     img.dataset.resolved='1';
-  }finally{ img.dataset.resolving='0'; }
+  }
 }
+
+function pumpImageQueue(){
+  while(activeImageRequests < MAX_IMAGE_REQUESTS && imageQueue.length){
+    const job=imageQueue.shift();
+    if(!job?.img?.isConnected) continue;
+    activeImageRequests++;
+    runImageJob(job).finally(()=>{activeImageRequests--;pumpImageQueue();});
+  }
+}
+
+function resolveGoalImage(img){
+  if(!img || img.dataset.queued==='1' || img.dataset.resolved==='1') return;
+  const id = img.closest('.goal-card')?.dataset.id;
+  const g = state.goals.find(x=>String(x.id)===String(id));
+  if(!g) return;
+  const key=String(g.position||g.id||'');
+  if(imageCache[key]) return applyResolvedImage(img,imageCache[key]);
+  img.dataset.queued='1';
+  imageQueue.push({img,g,key});
+  pumpImageQueue();
+}
+
 function wireGoalImages(){
-  const imgs=[...document.querySelectorAll('.goal-photo[data-query]')];
-  if(!('IntersectionObserver' in window)){ imgs.slice(0,12).forEach(resolveGoalImage); return; }
+  const imgs=[...document.querySelectorAll('.goal-photo')];
+  if(!('IntersectionObserver' in window)){ imgs.slice(0,16).forEach(resolveGoalImage); return; }
   const io=new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{ if(entry.isIntersecting){ resolveGoalImage(entry.target); io.unobserve(entry.target); } });
-  },{rootMargin:'500px 0px'});
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ resolveGoalImage(entry.target); io.unobserve(entry.target); }
+    });
+  },{rootMargin:'700px 0px'});
   imgs.forEach(img=>io.observe(img));
 }
 
@@ -293,7 +400,7 @@ function renderList(){
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
   wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
-    <img class="goal-photo" loading="lazy" decoding="async" src="${cachedImageForGoal(g)}" data-position="${g.position||''}" data-query="${escapeHtml(imageQueryForGoal(g))}" data-fallback="${fallbackForCategory(g.category)}" alt="" onerror="this.onerror=null;this.src=this.dataset.fallback">
+    <img class="goal-photo${cachedImageForGoal(g)?' is-loaded':''}" loading="lazy" decoding="async" ${cachedImageForGoal(g)?`src="${cachedImageForGoal(g)}"`:''} alt="${escapeHtml(g.title)}" onerror="this.removeAttribute('src');this.classList.remove('is-loaded')">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">
