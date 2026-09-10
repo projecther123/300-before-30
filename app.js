@@ -232,6 +232,11 @@ const IMAGE_OVERRIDES = {
   291:'braille reading fingers',292:'ice fishing frozen lake',293:'lake bled church bell slovenia',294:'netherlands tulip fields',295:'bran castle romania dracula',296:'scafell pike lake district',297:'ben nevis scotland',298:'kilimanjaro mountain africa',299:'wimbledon centre court tennis',300:'long friendship friends celebration'
 };
 
+const LOCAL_CARD_IMAGES = Object.freeze({
+  1:'001.jpg',2:'002.jpg',3:'003.jpg',4:'004.jpg',5:'005.jpg',
+  6:'006.jpg',7:'007.jpg',8:'008.jpg',9:'009.jpg',10:'010.jpg'
+});
+
 function imageQueryForGoal(g){
   const p=Number(g.position||0);
   if(IMAGE_OVERRIDES[p]) return IMAGE_OVERRIDES[p];
@@ -402,95 +407,19 @@ function wireGoalImages(){
 }
 
 
-
-const CURATED_GOAL_IMAGES = Object.freeze({
-  1: 'https://www.sennair.at/images/erlebnis/alpen-rundflug-sennair.jpg',
-  2: 'https://img.shetu66.com/2023/07/27/1690425653507675.png',
-  3: 'https://swiftmedia.s3.amazonaws.com/mountain.swiftcom.com/images/sites/6/2017/06/24123210/CVREpicDiscovery-vdn-062916.jpg',
-  4: 'https://images.squarespace-cdn.com/content/v1/5d84412f7f87bc5278736e53/a92c629a-f233-4222-bbbc-c5bdde291261/Website%2Bimage%2Bsummer%2Balex.jpg',
-  5: 'https://smukti.com/attached_assets/blogs/india_solo_travel_himalayas.png',
-  6: 'https://assets.makes.news/p/69fc8cbeff11fec4bae1dbc2/technology/2026/06/07/openai-s-gpt-5-6-kindle-alpha-hints-at-a-major-leap-in-visual-and-coding-capabilities/image_7297821.jpg',
-  7: 'https://www.10wallpaper.com/wallpaper/1366x768/1709/Aurora_sky_during_winter-2017_Nature_HD_Wallpaper_1366x768.jpg',
-  8: 'https://storage.lacapitalmdp.com/2018/11/AUTOCINE.jpg',
-  9: 'https://digitalcontent.api.tesco.com/v2/media/marketplace/1c70b460-2299-48f7-b6e8-f35761a32e5d/32a157f9a77744c1ad6bce7e73503aff_370962049.jpeg',
-  10:'https://static.wixstatic.com/media/2da879_b3cc400858414c73b64390914d4e378d~mv2.jpg/v1/fill/w_980%2Ch_656%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/2da879_b3cc400858414c73b64390914d4e378d~mv2.jpg'
-});
-
-function directPhotoTags(g){
-  // Keep tags literal and short. LoremFlickr treats commas as OR and /all as AND.
-  // Using 1–2 concrete nouns avoids the irrelevant fallback images we saw before.
-  const raw = String(imageQueryForGoal(g) || g.title || '').toLowerCase();
-  const replacements = [
-    [/hot air balloon/g,'balloon'],
-    [/northern lights|aurora/g,'aurora'],
-    [/great barrier reef/g,'reef'],
-    [/white water rafting/g,'rafting'],
-    [/drive in cinema|drive-in cinema|drive in movie/g,'drivein'],
-    [/business class airplane cabin/g,'airplane'],
-    [/solo backpacker|backpacking/g,'backpacker'],
-    [/bungee jumping|bungee jump/g,'bungee'],
-    [/zipline adventure|zipline/g,'zipline'],
-    [/helicopter flight|helicopter/g,'helicopter'],
-    [/skydiving parachute|skydiving/g,'skydiving'],
-    [/paragliding/g,'paragliding'],
-    [/parasailing/g,'parasailing'],
-    [/scuba diving|scuba/g,'scuba'],
-    [/water skiing/g,'waterskiing'],
-    [/horse riding/g,'horse'],
-    [/meteor shower/g,'stars'],
-    [/christmas market/g,'christmasmarket'],
-    [/opera house/g,'opera'],
-    [/race car/g,'racecar'],
-    [/yoga retreat/g,'yoga'],
-    [/wine vineyard|vineyard/g,'vineyard'],
-    [/cruise ship/g,'cruise'],
-    [/rainforest/g,'rainforest']
-  ];
-  let cooked = raw;
-  for(const [rx,val] of replacements){
-    if(rx.test(cooked)) return [val];
-  }
-  const stop = new Set([
-    'beautiful','scenic','editorial','lifestyle','natural','light','golden','hour',
-    'travel','adventure','stylish','aspirational','destination','experience','somewhere',
-    'actual','dramatic','famous','another','country','adult','major','trip','holiday',
-    'with','from','into','over','under','your','their','class','event','night'
-  ]);
-  const words = cooked.replace(/[^a-z0-9 ]+/g,' ').split(/\s+/)
-    .filter(w=>w.length>3 && !stop.has(w));
-  return [...new Set(words)].slice(0,2);
-}
-
-function directPhotoUrl(g, attempt=0){
-  const pinned = CURATED_GOAL_IMAGES[Number(g.position)];
-  if(pinned) return pinned;
-  const tags = directPhotoTags(g);
-  const primary = tags[0] || 'travel';
-  const secondary = tags[1];
-  const lock = Math.max(1, Number(g.position||1) + attempt*997);
-  // /all only when two concrete tags exist; otherwise use the strongest literal tag.
-  const path = secondary
-    ? `${encodeURIComponent(primary)},${encodeURIComponent(secondary)}/all`
-    : encodeURIComponent(primary);
-  return `https://loremflickr.com/640/960/${path}?lock=${lock}&random=${Number(g.position||1)}`;
+function cardImageForGoal(g){
+  const p=Number(g.position||0);
+  if(LOCAL_CARD_IMAGES[p]) return LOCAL_CARD_IMAGES[p];
+  // Until the remaining curated assets are added, use the stable category photograph.
+  // This is deliberately deterministic: no random search service, no repeated bears.
+  return fallbackForCategory(g.category);
 }
 
 function cardPhotoError(img, gId){
-  const card = img.closest('.goal-card');
   const g = state.goals.find(x=>String(x.id)===String(gId));
   if(!g) return;
-  const attempt = Number(img.dataset.attempt||0) + 1;
-  img.dataset.attempt = String(attempt);
-  if(attempt===1){
-    const tag = directPhotoTags(g)[0] || 'travel';
-    img.src = `https://loremflickr.com/640/960/${encodeURIComponent(tag)}?lock=${Number(g.position||1)+431}&random=${Number(g.position||1)+431}`;
-  } else if(attempt===2){
-    // Final fallback is still photographic, never a blank gradient.
-    const fallback = fallbackForCategory(g.category);
-    img.src = fallback;
-  } else {
-    img.onerror = null;
-  }
+  img.onerror=null;
+  img.src=fallbackForCategory(g.category);
 }
 
 function renderList(){
@@ -502,7 +431,7 @@ function renderList(){
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
   wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
-    <img class="goal-photo is-loaded" loading="lazy" decoding="async" src="${directPhotoUrl(g)}" data-attempt="0" alt="${escapeHtml(g.title)}" onerror="cardPhotoError(this,'${g.id}')">
+    <img class="goal-photo" loading="lazy" decoding="async" src="${cardImageForGoal(g)}" alt="${escapeHtml(g.title)}" onerror="cardPhotoError(this,'${g.id}')">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">

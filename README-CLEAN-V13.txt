@@ -1,0 +1,1 @@
+Clean V13 rebuild: one stylesheet, no stacked design overrides. Home uses a local Italy hero image. Cards 1–10 use local, relevant photographic assets derived from the approved mockup so they cannot disappear or turn into unrelated images. Cards 11–300 currently use stable category imagery until their individual curated assets are added.

@@ -1,0 +1,1 @@
+Flat-upload version for mobile GitHub: upload every file directly to the repository root. No folders are required. Image files are 001.jpg through 010.jpg plus home-italy.jpg.
