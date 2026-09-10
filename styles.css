@@ -433,3 +433,164 @@ nav{position:fixed;z-index:20;left:0;right:0;bottom:0;height:var(--navh);padding
   #home .ring{width:120px !important;height:120px !important;top:-66px !important;right:2.5% !important}
   #home .ring strong{font-size:35px !important}
 }
+
+
+/* ============================================================
+   V11 — LOCKED HOME HERO + RELIABLE PHOTO CARDS
+   This block is authoritative over earlier Home overrides.
+   Category progress-card design intentionally remains unchanged.
+   ============================================================ */
+
+#home .hero{
+  position:relative !important;
+  height:300px !important;
+  margin:0 -18px 8px !important;
+  overflow:hidden !important;
+}
+#home .hero-copy{
+  position:absolute !important;
+  left:20px !important;
+  top:24px !important;
+  width:48% !important;
+  z-index:4 !important;
+}
+#home .brand-kicker{display:none !important}
+#home .brand-lockup{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:0 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+#home .brand-lockup .brand-300{
+  display:block !important;
+  font-size:67px !important;
+  line-height:.78 !important;
+  letter-spacing:-.055em !important;
+  margin:0 !important;
+}
+#home .brand-lockup .brand-before{
+  display:block !important;
+  font-size:28px !important;
+  line-height:.92 !important;
+  letter-spacing:-.045em !important;
+  margin:7px 0 0 !important;
+}
+#home .hero-lower{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin-top:18px !important;
+  width:100% !important;
+}
+#home .overall{
+  position:static !important;
+  width:92px !important;
+  height:92px !important;
+  flex:0 0 92px !important;
+  z-index:5 !important;
+}
+#home .ring{
+  position:relative !important;
+  inset:auto !important;
+  width:92px !important;
+  height:92px !important;
+  right:auto !important;
+  top:auto !important;
+  background:#ded5c8 !important;
+  box-shadow:none !important;
+}
+#home .ring:before{inset:8px !important}
+#home .ring strong{
+  font-size:29px !important;
+  line-height:.9 !important;
+}
+#home .ring span{
+  font-size:8.5px !important;
+  line-height:1.02 !important;
+  margin-top:4px !important;
+}
+#home .hero-note{
+  position:static !important;
+  margin:0 !important;
+  padding-left:9px !important;
+  border-left:1px solid #b8ad9d !important;
+  transform:none !important;
+  rotate:0deg !important;
+  font-family:'Snell Roundhand','Brush Script MT',cursive !important;
+  font-size:15.5px !important;
+  line-height:1.05 !important;
+  text-align:left !important;
+  color:#998c7d !important;
+  min-height:72px !important;
+  display:flex !important;
+  align-items:center !important;
+}
+#home .hero-art{
+  position:absolute !important;
+  right:0 !important;
+  top:12px !important;
+  width:55% !important;
+  height:255px !important;
+  border-radius:58% 0 0 0 / 34% 0 0 0 !important;
+  background-image:
+    linear-gradient(180deg,rgba(255,242,219,.02),rgba(42,28,18,.06)),
+    url('https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=88') !important;
+  background-size:cover !important;
+  background-position:center 50% !important;
+}
+#home .section{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
+#home .section-head{
+  margin-top:0 !important;
+  margin-bottom:10px !important;
+}
+
+/* Activity cards: always image-first, with a subtle editorial wash + readable type */
+.goal-card{
+  background:#bcb3a5 !important;
+}
+.goal-photo{
+  opacity:1 !important;
+  filter:saturate(.86) contrast(.96) brightness(.92) !important;
+  transform:scale(1.015) !important;
+  background:#bcb3a5 !important;
+}
+.goal-shade{
+  background:
+    linear-gradient(180deg,rgba(18,17,15,.04) 0%,rgba(18,17,15,.08) 46%,rgba(14,14,13,.74) 100%) !important;
+}
+
+/* Compact phones */
+@media(max-width:390px){
+  #home .hero{
+    height:286px !important;
+    margin-left:-16px !important;
+    margin-right:-16px !important;
+  }
+  #home .hero-copy{
+    left:17px !important;
+    top:22px !important;
+    width:48% !important;
+  }
+  #home .brand-lockup .brand-300{font-size:61px !important}
+  #home .brand-lockup .brand-before{font-size:25px !important;margin-top:6px !important}
+  #home .hero-lower{gap:7px !important;margin-top:16px !important}
+  #home .overall{width:86px !important;height:86px !important;flex-basis:86px !important}
+  #home .ring{width:86px !important;height:86px !important}
+  #home .ring strong{font-size:27px !important}
+  #home .ring span{font-size:8px !important}
+  #home .hero-note{
+    font-size:14px !important;
+    padding-left:8px !important;
+    min-height:67px !important;
+  }
+  #home .hero-art{
+    width:55% !important;
+    height:241px !important;
+    top:11px !important;
+  }
+}

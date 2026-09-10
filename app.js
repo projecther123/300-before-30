@@ -250,7 +250,7 @@ function fallbackForCategory(category){
 // Goal imagery: every experience resolves from its OWN curated search phrase.
 // Openverse is keyless, so we can search photograph results directly in the browser.
 // Results are cached per experience and duplicates are deliberately avoided.
-const IMAGE_CACHE_KEY = 'bb30-image-cache-v10-server';
+const IMAGE_CACHE_KEY = 'bb30-image-cache-v11-direct';
 let imageCache = {};
 try { imageCache = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}') || {}; } catch(e) { imageCache = {}; }
 const claimedImages = new Set(Object.values(imageCache).filter(Boolean));
@@ -401,6 +401,83 @@ function wireGoalImages(){
   imgs.forEach(img=>io.observe(img));
 }
 
+
+function directPhotoTags(g){
+  // Keep tags literal and short. LoremFlickr treats commas as OR and /all as AND.
+  // Using 1–2 concrete nouns avoids the irrelevant fallback images we saw before.
+  const raw = String(imageQueryForGoal(g) || g.title || '').toLowerCase();
+  const replacements = [
+    [/hot air balloon/g,'balloon'],
+    [/northern lights|aurora/g,'aurora'],
+    [/great barrier reef/g,'reef'],
+    [/white water rafting/g,'rafting'],
+    [/drive in cinema|drive-in cinema|drive in movie/g,'drivein'],
+    [/business class airplane cabin/g,'airplane'],
+    [/solo backpacker|backpacking/g,'backpacker'],
+    [/bungee jumping|bungee jump/g,'bungee'],
+    [/zipline adventure|zipline/g,'zipline'],
+    [/helicopter flight|helicopter/g,'helicopter'],
+    [/skydiving parachute|skydiving/g,'skydiving'],
+    [/paragliding/g,'paragliding'],
+    [/parasailing/g,'parasailing'],
+    [/scuba diving|scuba/g,'scuba'],
+    [/water skiing/g,'waterskiing'],
+    [/horse riding/g,'horse'],
+    [/meteor shower/g,'stars'],
+    [/christmas market/g,'christmasmarket'],
+    [/opera house/g,'opera'],
+    [/race car/g,'racecar'],
+    [/yoga retreat/g,'yoga'],
+    [/wine vineyard|vineyard/g,'vineyard'],
+    [/cruise ship/g,'cruise'],
+    [/rainforest/g,'rainforest']
+  ];
+  let cooked = raw;
+  for(const [rx,val] of replacements){
+    if(rx.test(cooked)) return [val];
+  }
+  const stop = new Set([
+    'beautiful','scenic','editorial','lifestyle','natural','light','golden','hour',
+    'travel','adventure','stylish','aspirational','destination','experience','somewhere',
+    'actual','dramatic','famous','another','country','adult','major','trip','holiday',
+    'with','from','into','over','under','your','their','class','event','night'
+  ]);
+  const words = cooked.replace(/[^a-z0-9 ]+/g,' ').split(/\s+/)
+    .filter(w=>w.length>3 && !stop.has(w));
+  return [...new Set(words)].slice(0,2);
+}
+
+function directPhotoUrl(g, attempt=0){
+  const tags = directPhotoTags(g);
+  const primary = tags[0] || 'travel';
+  const secondary = tags[1];
+  const lock = Math.max(1, Number(g.position||1) + attempt*997);
+  // /all only when two concrete tags exist; otherwise use the strongest literal tag.
+  const path = secondary
+    ? `${encodeURIComponent(primary)},${encodeURIComponent(secondary)}/all`
+    : encodeURIComponent(primary);
+  return `https://loremflickr.com/640/960/${path}?lock=${lock}&random=${Number(g.position||1)}`;
+}
+
+function cardPhotoError(img, gId){
+  const card = img.closest('.goal-card');
+  const g = state.goals.find(x=>String(x.id)===String(gId));
+  if(!g) return;
+  const attempt = Number(img.dataset.attempt||0) + 1;
+  img.dataset.attempt = String(attempt);
+  if(attempt===1){
+    // Retry with a looser single-tag search.
+    const tag = directPhotoTags(g)[0] || 'travel';
+    img.src = `https://loremflickr.com/640/960/${encodeURIComponent(tag)}?lock=${Number(g.position||1)+431}&random=${Number(g.position||1)+431}`;
+  } else if(attempt===2){
+    // Final fallback is still photographic, never a blank gradient.
+    const fallback = fallbackForCategory(g.category);
+    img.src = fallback;
+  } else {
+    img.onerror = null;
+  }
+}
+
 function renderList(){
   const s=stats();
   $('#listStats').textContent=`${s.done} of ${s.total} · ${s.pct}% complete`;
@@ -410,7 +487,7 @@ function renderList(){
   const wrap=$('#goals');
   wrap.className=state.view==='cards'?'cards':'rows';
   wrap.innerHTML=goals.map(g=>`<article class="goal-card" data-id="${g.id}">
-    <img class="goal-photo${cachedImageForGoal(g)?' is-loaded':''}" loading="lazy" decoding="async" ${cachedImageForGoal(g)?`src="${cachedImageForGoal(g)}"`:''} alt="${escapeHtml(g.title)}" onerror="this.removeAttribute('src');this.classList.remove('is-loaded')">
+    <img class="goal-photo is-loaded" loading="lazy" decoding="async" src="${directPhotoUrl(g)}" data-attempt="0" alt="${escapeHtml(g.title)}" onerror="cardPhotoError(this,'${g.id}')">
     <span class="goal-num">${String(g.position||'').padStart(3,'0')}</span>
     <div class="goal-shade"></div>
     <div class="goal-card-copy">
@@ -422,7 +499,7 @@ function renderList(){
   </article>`).join('');
   $$('.goal-card').forEach(c=>c.onclick=e=>{if(e.target.closest('[data-tick]'))return;openGoal(c.dataset.id)});
   $$('[data-tick]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleGoal(b.dataset.tick)});
-  wireGoalImages();
+  // V11: images are direct <img> URLs; no cross-origin fetch queue needed.
 }
 
 async function toggleGoal(id){
