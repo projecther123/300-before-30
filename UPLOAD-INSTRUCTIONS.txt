@@ -1,0 +1,41 @@
+300 Before 30 – GitHub image batch
+
+Upload these numbered JPG files into the ROOT of your GitHub repo, where 001.jpg, 002.jpg, etc. already live.
+When GitHub asks about duplicate filenames, replace/overwrite the old files.
+
+IMPORTANT: 033.jpg is NOT included because the clean no-text version of goal #33 (Attend a live talk-show recording) was never generated. Leave the current 033.jpg alone for now, or replace it after we generate the clean version.
+
+Included:
+025.jpg — Visit South America
+028.jpg — Release a floating lantern
+029.jpg — Take a cooking class
+030.jpg — Take a cocktail-making class
+031.jpg — Throw a dart at a map and go wherever it lands
+032.jpg — Attend a TED Talk
+034.jpg — See a band you've never heard of live
+035.jpg — See an opera at an opera house
+036.jpg — Hold a koala
+037.jpg — Go grape stomping
+038.jpg — Go white-water rafting
+039.jpg — Experience an iconic festival in another country
+040.jpg — Gamble at a casino
+041.jpg — Go to Oktoberfest
+042.jpg — Take a road trip with friends
+043.jpg — Read the Bible from start to finish
+044.jpg — Go paintballing
+045.jpg — Play laser tag
+046.jpg — See all Seven Wonders of the Modern World
+047.jpg — Take a hot-air balloon ride
+048.jpg — Watch a meteor shower
+049.jpg — Go 48 hours without electronics
+050.jpg — Go ice-water swimming
+051.jpg — Take an ancestry DNA test
+052.jpg — Stand under a waterfall
+053.jpg — Do a colour run
+054.jpg — Take a pottery class
+055.jpg — Learn to play a song on an instrument
+056.jpg — Fly in a seaplane
+057.jpg — Go horse riding somewhere incredible
+058.jpg — Go on a blind date
+059.jpg — Go to a restaurant alone abroad
+060.jpg — Try frog legs
