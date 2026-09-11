@@ -6,21 +6,108 @@
   <meta name="theme-color" content="#f3eee5">
   <title>300 Before 30</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div id="onboarding" class="onboarding hidden">
-    <div class="onboard-card">
-      <div class="brand-kicker">A BRIGHTER, BRAVER YOU.</div>
-      <h1 class="brand-lockup"><span class="brand-300">300</span><span class="brand-before">BEFORE 30</span></h1>
-      <p>Start with our curated 300. Tick them off, change what doesn’t fit, and make the list yours.</p>
-      <form id="profileForm">
-        <label>Choose a username</label>
-        <div class="username-row"><span>@</span><input id="usernameInput" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" autocomplete="off" placeholder="becky" required></div>
-        <div id="usernameHelp" class="help">Letters, numbers and underscores only.</div>
-        <button class="primary wide" type="submit">Create my list</button>
-      </form>
-      <div class="help privacy-note">No email or phone number required. Your profile is private to your anonymous account on this device.</div>
+    <div class="auth-shell">
+      <div class="auth-panel">
+
+        <section id="authLanding" class="auth-view auth-landing">
+          <div class="auth-brand">
+            <div class="brand-lockup">
+              <span class="brand-300">300</span>
+              <span class="brand-before">BEFORE 30</span>
+            </div>
+            <p class="auth-tagline">More experiences.<br>A richer life.</p>
+          </div>
+
+          <div class="auth-actions">
+            <button id="goSignIn" class="auth-btn primary" type="button">Sign in</button>
+            <button id="goSignUp" class="auth-btn secondary" type="button">Create account</button>
+          </div>
+        </section>
+
+        <section id="authSignIn" class="auth-view auth-form-view hidden">
+          <button class="auth-back" data-auth-back type="button" aria-label="Back">←</button>
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-subtitle">Sign in to your 300 before 30 list.</p>
+
+          <form id="signInForm" class="auth-form">
+            <div class="auth-field">
+              <label for="signInUsername">Username</label>
+              <input id="signInUsername" class="auth-input" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+            </div>
+
+            <div class="auth-field">
+              <label for="signInPassword">Password</label>
+              <div class="auth-input-wrap">
+                <input id="signInPassword" class="auth-input auth-password" type="password" autocomplete="current-password" required>
+                <button class="auth-eye" data-toggle-password="signInPassword" type="button" aria-label="Show password">◉</button>
+              </div>
+              <div id="signInHelp" class="auth-help"></div>
+            </div>
+
+            <button id="signInSubmit" class="auth-submit" type="submit">Sign in</button>
+          </form>
+
+          <div class="auth-switch">
+            New here? <button id="signInToSignUp" type="button">Create an account</button>
+          </div>
+
+          <div class="auth-foot">Same adventures. Your list.</div>
+        </section>
+
+        <section id="authSignUp" class="auth-view auth-form-view hidden">
+          <button class="auth-back" data-auth-back type="button" aria-label="Back">←</button>
+          <h1 class="auth-title">Create your account</h1>
+          <p class="auth-subtitle">Start your 300 before 30 journey.</p>
+
+          <form id="profileForm" class="auth-form">
+            <div class="auth-field">
+              <label for="usernameInput">Choose a username</label>
+              <input id="usernameInput" class="auth-input" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+              <div id="usernameHelp" class="auth-help">3–20 letters, numbers or underscores.</div>
+            </div>
+
+            <div class="auth-field">
+              <label for="signUpPassword">Create a password</label>
+              <div class="auth-input-wrap">
+                <input id="signUpPassword" class="auth-input auth-password" type="password" minlength="8" autocomplete="new-password" required>
+                <button class="auth-eye" data-toggle-password="signUpPassword" type="button" aria-label="Show password">◉</button>
+              </div>
+              <div id="passwordHelp" class="auth-help">Use at least 8 characters.</div>
+            </div>
+
+            <div class="auth-field">
+              <label for="confirmPassword">Confirm password</label>
+              <div class="auth-input-wrap">
+                <input id="confirmPassword" class="auth-input auth-password" type="password" minlength="8" autocomplete="new-password" required>
+                <button class="auth-eye" data-toggle-password="confirmPassword" type="button" aria-label="Show password">◉</button>
+              </div>
+              <div id="confirmHelp" class="auth-help"></div>
+            </div>
+
+            <button id="signUpSubmit" class="auth-submit" type="submit">Create my list</button>
+          </form>
+
+          <div class="auth-switch">
+            Already have an account? <button id="signUpToSignIn" type="button">Sign in</button>
+          </div>
+
+          <div class="auth-foot">A life well lived.</div>
+        </section>
+
+        <section id="authSuccess" class="auth-view auth-success hidden">
+          <div class="auth-success-copy">
+            <strong>You’re in!</strong>
+            <p>Your 300 before 30 list<br>is ready.</p>
+          </div>
+          <button id="authLetsGo" class="auth-btn primary" type="button">Let’s go</button>
+        </section>
+
+      </div>
     </div>
   </div>
 
@@ -81,10 +168,10 @@
           <div class="me-progress"><strong id="mePct">0%</strong><div><div id="meDone">0 completed</div><div id="meRemaining">0 remaining</div><div id="meTotal">0 total</div></div></div>
         </div>
         <div class="settings">
-          <button id="switchProfile"><span>♙ &nbsp; Start another profile</span><span>›</span></button>
+          <button id="switchProfile"><span>♙ &nbsp; Sign out</span><span>›</span></button>
           <button id="resetBtn"><span>↶ &nbsp; Reset to original 300</span><span>›</span></button>
           <button id="exportBtn"><span>⇩ &nbsp; Export my list</span><span>›</span></button>
-          <button id="deleteProfile" class="danger"><span>♲ &nbsp; Delete profile</span><span>›</span></button>
+          <button id="deleteProfile" class="danger hidden"><span>♲ &nbsp; Delete profile</span><span>›</span></button>
         </div>
         <div class="me-note">Collect experiences,<br>not things.</div>
       </section>
@@ -104,5 +191,6 @@
   <div id="toast" class="toast hidden"></div>
 
   <script src="app.js"></script>
+  <script src="auth.js"></script>
 </body>
 </html>
