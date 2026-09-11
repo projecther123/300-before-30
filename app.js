@@ -454,14 +454,28 @@ function cardImageForGoal(g) {
 }
 
 function cardPhotoError(img, gId) {
-  /*
-    If a numbered image is genuinely missing,
-    hide the failed image cleanly rather than
-    replacing it with a random internet photo.
-  */
+  if (!img.dataset.retried) {
+    img.dataset.retried = 'true';
+
+    const cleanSrc = img.src.split('&retry=')[0];
+
+    img.src =
+      cleanSrc +
+      '&retry=' +
+      Date.now();
+
+    return;
+  }
 
   img.onerror = null;
-  img.style.opacity = '0';
+
+  console.warn(
+    'Image still failed after retry',
+    gId,
+    img.src
+  );
+}
+
 
   console.warn(
     'Missing image for goal',
