@@ -450,7 +450,7 @@ function cardImageForGoal(g) {
     String(position)
       .padStart(3, '0');
 
-  return `/${filename}.jpg?v=2`;
+  return `/${filename}.jpg?v=3`;
 }
 
 function cardPhotoError(img, gId) {
